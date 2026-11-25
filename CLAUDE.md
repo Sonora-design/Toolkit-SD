@@ -30,7 +30,7 @@ Deze namen staan in de database van de klantsites. Wijzigen = instellingen kwijt
 
 - `toolkit-sd.php` – koptekst, `VERSION`, `defaults()`, laden van modules.
 - `modules/` – één bestand per module (rest, login, admin-menu, login-redirect, admin-bar, media-categories, email-obfuscate, hide-notices).
-- `includes/admin.php` – beheerpagina (Instellingen > Toolkit SD), tabs, opslaan via AJAX.
+- `includes/admin.php` – beheerpagina (Extra > Toolkit SD), tabs, opslaan via AJAX.
 - `includes/ase-import.php` – overname uit ASE en ASE-functies uitzetten/terugzetten.
 - `includes/updater.php` – updates via de GitHub-releases.
 - `assets/` – admin.css/js (stijl zoals Fluidly, CTA-kleur #006fa0), login.css, logo.

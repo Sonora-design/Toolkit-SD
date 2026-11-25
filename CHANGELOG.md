@@ -1,5 +1,12 @@
 # Toolkit SD – changelog
 
+## 1.5.0 – 2026-11-25
+
+- De beheerpagina staat nu onder Extra > Toolkit SD (Tools in het Engels). Het oude adres onder Instellingen stuurt automatisch door.
+- Doorsturen na inloggen: op een nieuwe site staat voor de rol Editor standaard `/dashboard/` ingevuld. Sites die al instellingen bewaard hebben, houden wat er stond.
+- Veiliger updaten: zonder geldige controlesom in het versiebestand wordt een update nooit geïnstalleerd.
+- Lege index.php in de mappen van de plugin, zodat de webserver geen bestandslijst toont.
+
 ## 1.4.1 – 2026-11-25
 
 - Updates komen voortaan rechtstreeks van de releases op GitHub (Sonora-design/Toolkit-SD), niet meer van sonoradesign.be.

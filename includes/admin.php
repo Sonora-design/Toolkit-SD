@@ -1,6 +1,6 @@
 <?php
 /**
- * Beheerpagina: Instellingen > Toolkit SD.
+ * Beheerpagina: Extra > Toolkit SD (Tools > Toolkit SD).
  * Opbouw zoals Fluidly: bovenbalk, tabbladen, kaarten en schakelaars, opslaan zonder herladen.
  */
 
@@ -64,7 +64,23 @@ function login_url() {
 add_action(
 	'admin_menu',
 	function () {
-		add_options_page( 'Toolkit SD', 'Toolkit SD', 'manage_options', SLUG, __NAMESPACE__ . '\render' );
+		add_management_page( 'Toolkit SD', 'Toolkit SD', 'manage_options', SLUG, __NAMESPACE__ . '\render' );
+	}
+);
+
+function page_url() {
+	return admin_url( 'tools.php?page=' . SLUG );
+}
+
+// Oud adres (Instellingen > Toolkit SD) doorsturen naar Extra > Toolkit SD.
+add_action(
+	'admin_init',
+	function () {
+		global $pagenow;
+		if ( 'options-general.php' === $pagenow && isset( $_GET['page'] ) && SLUG === $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification -- enkel doorsturen.
+			wp_safe_redirect( page_url() );
+			exit;
+		}
 	}
 );
 
@@ -83,7 +99,7 @@ add_action(
 add_filter(
 	'plugin_action_links_' . plugin_basename( SDE_FILE ),
 	function ( $links ) {
-		array_unshift( $links, '<a href="' . esc_url( admin_url( 'options-general.php?page=' . SLUG ) ) . '">Instellingen</a>' );
+		array_unshift( $links, '<a href="' . esc_url( page_url() ) . '">Instellingen</a>' );
 		return $links;
 	}
 );
@@ -91,7 +107,7 @@ add_filter(
 add_action(
 	'admin_enqueue_scripts',
 	function ( $hook ) {
-		if ( 'settings_page_' . SLUG !== $hook ) {
+		if ( 'tools_page_' . SLUG !== $hook ) {
 			return;
 		}
 		wp_enqueue_media();

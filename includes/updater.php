@@ -174,8 +174,12 @@ add_filter(
 			return $reply;
 		}
 		$i = info();
-		if ( ! $i || $package !== $i['download_url'] || empty( $i['sha256'] ) ) {
+		if ( ! $i || $package !== $i['download_url'] ) {
 			return $reply;
+		}
+		// Zonder geldige controlesom nooit installeren.
+		if ( empty( $i['sha256'] ) || ! preg_match( '/^[a-f0-9]{64}$/i', (string) $i['sha256'] ) ) {
+			return new \WP_Error( 'sde_checksum', 'Het versiebestand van Toolkit SD heeft geen geldige controlesom. De update is afgebroken; er is niets gewijzigd.' );
 		}
 		if ( ! function_exists( 'download_url' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';

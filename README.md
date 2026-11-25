@@ -2,7 +2,7 @@
 
 Eigen WordPress-plugin van Sonora design. Vervangt de functies van ASE Pro die we op klantsites gebruiken, zodat die sites op de gratis versie van ASE kunnen draaien.
 
-**Instellingen op de site:** Instellingen > Toolkit SD.
+**Instellingen op de site:** Extra > Toolkit SD.
 
 Vroeger heette deze plugin "Sonora design enhancements" (tot en met 1.2.2).
 
