@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
 BASE_URL = "https://sonoradesign.be/updates/toolkit-sd/"
 SKIP_DIRS = {".git", "bin", "dist", ".github", ".claude"}
-SKIP_FILES = {".gitignore", ".DS_Store", "Thumbs.db"}
+SKIP_FILES = {".gitignore", ".DS_Store", "Thumbs.db", "CLAUDE.md"}
 
 
 def header(name: str) -> str:
