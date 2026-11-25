@@ -4,10 +4,10 @@
 Gebruik:  python3 bin/build.py
 Resultaat in dist/:
   - toolkit-sd-X.Y.Z.zip   (map toolkit-sd/ met de plugin, zonder bin/, dist/ en git-bestanden)
-  - info.json              (versiebestand voor https://sonoradesign.be/updates/toolkit-sd/)
+  - info.json              (versiebestand)
 
-Beide bestanden komen op sonoradesign.be in de map updates/toolkit-sd/.
-De zip hangt ook aan de release op GitHub.
+Beide bestanden hangen aan de GitHub-release vX.Y.Z (dat doet de GitHub Action).
+De sites lezen https://github.com/Sonora-design/Toolkit-SD/releases/latest/download/info.json.
 """
 
 import datetime
@@ -20,7 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
-BASE_URL = "https://sonoradesign.be/updates/toolkit-sd/"
+REPO_URL = "https://github.com/Sonora-design/Toolkit-SD"
 SKIP_DIRS = {".git", "bin", "dist", ".github", ".claude"}
 SKIP_FILES = {".gitignore", ".DS_Store", "Thumbs.db", "CLAUDE.md"}
 
@@ -82,7 +82,7 @@ def main() -> None:
     info = {
         "name": "Toolkit SD",
         "version": version,
-        "download_url": BASE_URL + zip_name,
+        "download_url": f"{REPO_URL}/releases/download/v{version}/{zip_name}",
         "requires": header("Requires at least"),
         "requires_php": header("Requires PHP"),
         "tested": "6.9",

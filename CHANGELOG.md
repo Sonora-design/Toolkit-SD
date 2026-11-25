@@ -1,5 +1,11 @@
 # Toolkit SD – changelog
 
+## 1.4.1 – 2026-11-25
+
+- Updates komen voortaan rechtstreeks van de releases op GitHub (Sonora-design/Toolkit-SD), niet meer van sonoradesign.be.
+- De vraag naar GitHub stuurt enkel "Toolkit-SD" mee, niet het adres van de site.
+- Downloads worden enkel aanvaard van github.com of sonoradesign.be, en altijd met controle van de controlesom.
+
 ## 1.4.0 – 2026-11-25
 
 - Updates via sonoradesign.be: de site kijkt twee keer per dag in `https://sonoradesign.be/updates/toolkit-sd/info.json`. Een nieuwe versie verschijnt bij Plugins en Dashboard > Updates, met de changelog onder "Details bekijken". Automatische updates kunnen per site aangezet worden.

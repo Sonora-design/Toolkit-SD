@@ -22,7 +22,8 @@ Deze namen staan in de database van de klantsites. Wijzigen = instellingen kwijt
 
 - Geen externe diensten, geen tracking, geen Google Fonts of CDN's. Alles lokaal.
 - Geen sleutels of wachtwoorden in de code of op klantsites.
-- Updates enkel via `https://sonoradesign.be/updates/toolkit-sd/info.json`, met sha256-controle (zie `includes/updater.php`).
+- Updates enkel via de GitHub-releases (`https://github.com/Sonora-design/Toolkit-SD/releases/latest/download/info.json`), met sha256-controle en enkel downloads van github.com of sonoradesign.be (zie `includes/updater.php`). De vraag naar GitHub stuurt enkel de user-agent `Toolkit-SD` mee, nooit het adres van de site.
+- De repository is **publiek**: nooit klantgegevens, sitenamen met persoonsgegevens, wachtwoorden of interne notities in code, commits of issues.
 - Gebruikersinvoer altijd sanitizen, uitvoer escapen, nonces en `manage_options` bij AJAX.
 
 ## Structuur
@@ -31,7 +32,7 @@ Deze namen staan in de database van de klantsites. Wijzigen = instellingen kwijt
 - `modules/` – één bestand per module (rest, login, admin-menu, login-redirect, admin-bar, media-categories, email-obfuscate, hide-notices).
 - `includes/admin.php` – beheerpagina (Instellingen > Toolkit SD), tabs, opslaan via AJAX.
 - `includes/ase-import.php` – overname uit ASE en ASE-functies uitzetten/terugzetten.
-- `includes/updater.php` – updates via sonoradesign.be.
+- `includes/updater.php` – updates via de GitHub-releases.
 - `assets/` – admin.css/js (stijl zoals Fluidly, CTA-kleur #006fa0), login.css, logo.
 - `bin/build.py` – bouwt `dist/toolkit-sd-X.Y.Z.zip` en `dist/info.json`.
 
@@ -45,18 +46,15 @@ Deze namen staan in de database van de klantsites. Wijzigen = instellingen kwijt
 6. Versielabel zetten en pushen: `git tag vX.Y.Z && git push origin vX.Y.Z`.
    Dat start de GitHub Action `.github/workflows/release.yml`, die automatisch:
    - de zip en info.json bouwt en controleert dat label en versie overeenkomen;
-   - de GitHub-release maakt met de zip en de changelog van deze versie;
-   - eerst de zip, dan info.json op `sonoradesign.be/updates/toolkit-sd/` zet (SSH naar SiteGround);
-   - online nakijkt dat versie en controlesom kloppen.
+   - de GitHub-release maakt met de zip, info.json en de changelog van deze versie;
+   - nakijkt dat `releases/latest/download/info.json` de nieuwe versie toont en de controlesom klopt.
 7. Volgen: `gh run watch` (of `gh run list --workflow release.yml`). Mislukt een stap, lees de log (`gh run view --log-failed`) en meld het aan Jurgen. Een label opnieuw gebruiken: eerst release en label verwijderen (`gh release delete vX.Y.Z --cleanup-tag`), dan pas opnieuw taggen.
 
 Vraag Jurgen altijd om bevestiging vóór stap 6 (label pushen): vanaf dan zien alle klantsites de update binnen 12 uur.
 
-## Publiceren naar sonoradesign.be
+## Publiceren
 
-Gebeurt door de GitHub Action (stap 6), nooit rechtstreeks vanaf deze computer. De SSH-gegevens van SiteGround staan als secrets in GitHub (`SG_SSH_HOST`, `SG_SSH_PORT`, `SG_SSH_USER`, `SG_SSH_KEY`, `SG_SSH_PASSPHRASE`, optioneel `SG_KNOWN_HOSTS`). Nooit sleutels in de repository zetten.
-
-Doelmap op de server: `~/www/sonoradesign.be/public_html/updates/toolkit-sd/` (publiek: https://sonoradesign.be/updates/toolkit-sd/). Oude zips mogen blijven staan.
+Gebeurt volledig door de GitHub Action bij het versielabel (stap 6). Geen secrets, geen upload naar een server. De laatste release (niet als pre-release gemarkeerd) is wat de sites zien. Een release die niet naar de sites mag: maak ze als pre-release, of zet geen label.
 
 ## Testen
 

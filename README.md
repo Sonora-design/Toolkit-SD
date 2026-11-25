@@ -31,13 +31,13 @@ Tabblad **Overstap ASE**: bekijken, overnemen, ASE-functies uitzetten (met back-
 2. `CHANGELOG.md` aanvullen met een regel `## X.Y.Z – datum`.
 3. `python3 bin/build.py` om te controleren.
 4. Commit en push naar `main`, daarna `git tag vX.Y.Z && git push origin vX.Y.Z`.
-5. De GitHub Action maakt de release en zet zip en `info.json` op `sonoradesign.be/updates/toolkit-sd/`. Alle sites zien de update binnen 12 uur (of meteen via Dashboard > Updates > Opnieuw controleren).
+5. De GitHub Action maakt de release met de zip en `info.json`. Alle sites zien de update binnen 12 uur (of meteen via Dashboard > Updates > Opnieuw controleren).
 
 De volledige werkwijze voor Claude Code staat in `CLAUDE.md`.
 
 ## Updates op de sites
 
-Sinds 1.4.0 kijkt elke site twee keer per dag in `https://sonoradesign.be/updates/toolkit-sd/info.json`. Geen sleutels, geen externe dienst: enkel ons eigen domein. Een ander adres (bv. om te testen) kan met `define( 'SDE_UPDATE_URL', '…' );` in wp-config.php.
+Sinds 1.4.1 kijkt elke site twee keer per dag in `https://github.com/Sonora-design/Toolkit-SD/releases/latest/download/info.json`. Geen sleutels op de site; de vraag stuurt enkel "Toolkit-SD" mee, niet het adres van de site. De download wordt gecontroleerd met de controlesom (sha256) uit `info.json`. Een ander adres (bv. om te testen) kan met `define( 'SDE_UPDATE_URL', '…' );` in wp-config.php.
 
 ## Vereisten
 

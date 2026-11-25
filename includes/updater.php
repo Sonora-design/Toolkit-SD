@@ -1,15 +1,18 @@
 <?php
 /**
- * Updates via sonoradesign.be.
+ * Updates via de releases op GitHub (publieke repository Sonora-design/Toolkit-SD).
  *
- * De site leest twee keer per dag een klein versiebestand op sonoradesign.be.
+ * De site leest twee keer per dag het versiebestand info.json van de laatste release.
  * Is er een nieuwere versie, dan verschijnt die bij Plugins en Dashboard > Updates,
- * zoals elke andere plugin. Geen sleutels op de site, geen externe diensten.
+ * zoals elke andere plugin. Geen sleutels op de site.
+ *
+ * Privacy: de vraag naar GitHub bevat enkel de naam "Toolkit-SD" als user-agent,
+ * niet het adres van de site. Er worden geen gegevens van bezoekers verstuurd.
  *
  * Formaat van info.json:
  * {
- *   "version": "1.4.0",
- *   "download_url": "https://sonoradesign.be/updates/toolkit-sd/toolkit-sd-1.4.0.zip",
+ *   "version": "1.4.1",
+ *   "download_url": "https://github.com/Sonora-design/Toolkit-SD/releases/download/v1.4.1/toolkit-sd-1.4.1.zip",
  *   "requires": "6.4",
  *   "requires_php": "7.4",
  *   "tested": "6.9",
@@ -24,12 +27,22 @@ namespace SDE\Updater;
 defined( 'ABSPATH' ) || exit;
 
 const CACHE = 'sde_update_info';
+const UA    = 'Toolkit-SD';
+
+/**
+ * Enkel downloads van deze adressen worden aanvaard.
+ */
+function allowed_host( $url ) {
+	$host = strtolower( (string) wp_parse_url( (string) $url, PHP_URL_HOST ) );
+	return 0 === strpos( (string) $url, 'https://' )
+		&& in_array( $host, array( 'github.com', 'sonoradesign.be' ), true );
+}
 
 /**
  * Adres van het versiebestand. Overschrijfbaar met de constante SDE_UPDATE_URL in wp-config.php.
  */
 function info_url() {
-	return defined( 'SDE_UPDATE_URL' ) ? SDE_UPDATE_URL : 'https://sonoradesign.be/updates/toolkit-sd/info.json';
+	return defined( 'SDE_UPDATE_URL' ) ? SDE_UPDATE_URL : 'https://github.com/Sonora-design/Toolkit-SD/releases/latest/download/info.json';
 }
 
 function plugin_file() {
@@ -51,15 +64,17 @@ function info( $fresh = false ) {
 	$res  = wp_remote_get(
 		info_url(),
 		array(
-			'timeout' => 8,
-			'headers' => array( 'Accept' => 'application/json' ),
+			'timeout'     => 8,
+			'redirection' => 5,
+			'user-agent'  => UA,
+			'headers'     => array( 'Accept' => 'application/json' ),
 		)
 	);
 	$data = null;
 	if ( ! is_wp_error( $res ) && 200 === (int) wp_remote_retrieve_response_code( $res ) ) {
 		$json = json_decode( wp_remote_retrieve_body( $res ), true );
 		if ( is_array( $json ) && ! empty( $json['version'] ) && ! empty( $json['download_url'] )
-			&& 0 === strpos( (string) $json['download_url'], 'https://' ) ) {
+			&& allowed_host( $json['download_url'] ) ) {
 			$data = $json;
 		}
 	}
@@ -165,7 +180,16 @@ add_filter(
 		if ( ! function_exists( 'download_url' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
+		$ua = function ( $args, $url ) {
+			$host = (string) wp_parse_url( $url, PHP_URL_HOST );
+			if ( 'github.com' === $host || '.githubusercontent.com' === substr( $host, -22 ) ) {
+				$args['user-agent'] = UA;
+			}
+			return $args;
+		};
+		add_filter( 'http_request_args', $ua, 10, 2 );
 		$tmp = download_url( $package, 300 );
+		remove_filter( 'http_request_args', $ua, 10 );
 		if ( is_wp_error( $tmp ) ) {
 			return $tmp;
 		}

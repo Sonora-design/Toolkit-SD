@@ -1,19 +1,13 @@
 # Release van Toolkit SD
 #
-# Start bij elk versielabel vX.Y.Z (bv. git tag v1.4.1 && git push origin v1.4.1).
+# Start bij elk versielabel vX.Y.Z (bv. git tag v1.4.2 && git push origin v1.4.2).
 # 1. bouwt de zip en info.json (bin/build.py)
 # 2. controleert dat het label overeenkomt met de versie in toolkit-sd.php
-# 3. maakt de GitHub-release met de zip
-# 4. zet eerst de zip, dan info.json op sonoradesign.be/updates/toolkit-sd/
-# 5. controleert online dat versie en controlesom kloppen
+# 3. maakt de GitHub-release met de zip en info.json als bijlagen
+# 4. controleert dat de sites ze kunnen ophalen via releases/latest/download/
 #
-# Benodigde secrets (Settings > Secrets and variables > Actions):
-#   SG_SSH_HOST         SSH-host van SiteGround (Site Tools > Devs > SSH Keys Manager > Credentials)
-#   SG_SSH_PORT         meestal 18765
-#   SG_SSH_USER         SSH-gebruikersnaam (begint met u...)
-#   SG_SSH_KEY          private sleutel (volledige tekst, inclusief BEGIN/END-regels)
-#   SG_SSH_PASSPHRASE   wachtwoordzin van de sleutel (leeg laten als er geen is)
-#   SG_KNOWN_HOSTS      (optioneel) uitvoer van: ssh-keyscan -p 18765 <host>
+# De sites lezen https://github.com/Sonora-design/Toolkit-SD/releases/latest/download/info.json.
+# Daarvoor moet de repository publiek zijn. Geen secrets nodig.
 
 name: Release
 
@@ -32,9 +26,6 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
-    env:
-      REMOTE_DIR: www/sonoradesign.be/public_html/updates/toolkit-sd
-      PUBLIC_URL: https://sonoradesign.be/updates/toolkit-sd
     steps:
       - uses: actions/checkout@v4
 
@@ -52,63 +43,31 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           # Changelog van deze versie als releasetekst.
           awk -v v="## $VERSION " 'index($0,v)==1{f=1;next} /^## /{f=0} f' CHANGELOG.md > dist/notes.md
-          sha256sum dist/toolkit-sd-$VERSION.zip
+          sha256sum "dist/toolkit-sd-$VERSION.zip"
 
       - name: GitHub-release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           V=${{ steps.v.outputs.version }}
-          gh release create "$GITHUB_REF_NAME" "dist/toolkit-sd-$V.zip" \
-            --title "Toolkit SD $V" --notes-file dist/notes.md --verify-tag
+          gh release create "$GITHUB_REF_NAME" "dist/toolkit-sd-$V.zip" dist/info.json \
+            --title "Toolkit SD $V" --notes-file dist/notes.md --verify-tag --latest
 
-      - name: SSH-sleutel klaarzetten
-        env:
-          KEY: ${{ secrets.SG_SSH_KEY }}
-          PASS: ${{ secrets.SG_SSH_PASSPHRASE }}
-          KNOWN: ${{ secrets.SG_KNOWN_HOSTS }}
-          HOST: ${{ secrets.SG_SSH_HOST }}
-          PORT: ${{ secrets.SG_SSH_PORT }}
-        run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$KEY" > ~/.ssh/sg_key
-          chmod 600 ~/.ssh/sg_key
-          if [ -n "$PASS" ]; then ssh-keygen -p -q -P "$PASS" -N "" -f ~/.ssh/sg_key; fi
-          if [ -n "$KNOWN" ]; then
-            printf '%s\n' "$KNOWN" > ~/.ssh/known_hosts
-          else
-            ssh-keyscan -p "${PORT:-18765}" "$HOST" > ~/.ssh/known_hosts 2>/dev/null
-          fi
-
-      - name: Publiceren op sonoradesign.be
-        env:
-          HOST: ${{ secrets.SG_SSH_HOST }}
-          PORT: ${{ secrets.SG_SSH_PORT }}
-          USER: ${{ secrets.SG_SSH_USER }}
+      - name: Controleren zoals een site het ziet
         run: |
           V=${{ steps.v.outputs.version }}
-          SSH="ssh -i $HOME/.ssh/sg_key -p ${PORT:-18765} -o BatchMode=yes"
-          $SSH "$USER@$HOST" "mkdir -p $REMOTE_DIR"
-          # Eerst de zip, dan pas info.json: een site ziet nooit een versie waarvan de zip nog ontbreekt.
-          scp -i ~/.ssh/sg_key -P "${PORT:-18765}" -o BatchMode=yes "dist/toolkit-sd-$V.zip" "$USER@$HOST:$REMOTE_DIR/toolkit-sd-$V.zip.tmp"
-          $SSH "$USER@$HOST" "mv -f $REMOTE_DIR/toolkit-sd-$V.zip.tmp $REMOTE_DIR/toolkit-sd-$V.zip && chmod 644 $REMOTE_DIR/toolkit-sd-$V.zip"
-          scp -i ~/.ssh/sg_key -P "${PORT:-18765}" -o BatchMode=yes dist/info.json "$USER@$HOST:$REMOTE_DIR/info.json.tmp"
-          $SSH "$USER@$HOST" "mv -f $REMOTE_DIR/info.json.tmp $REMOTE_DIR/info.json && chmod 644 $REMOTE_DIR/info.json"
-
-      - name: Online controleren
-        run: |
-          V=${{ steps.v.outputs.version }}
+          BASE="https://github.com/${GITHUB_REPOSITORY}/releases"
           sleep 5
-          curl -fsS "$PUBLIC_URL/info.json?nc=$GITHUB_RUN_ID" -o online.json
+          if ! curl -fsSL -A "Toolkit-SD" "$BASE/latest/download/info.json" -o online.json; then
+            echo "::error::info.json is niet publiek bereikbaar. Is de repository publiek?"
+            exit 1
+          fi
           ONLINE_V=$(python3 -c "import json;print(json.load(open('online.json'))['version'])")
           ONLINE_SHA=$(python3 -c "import json;print(json.load(open('online.json'))['sha256'])")
-          curl -fsS "$PUBLIC_URL/toolkit-sd-$V.zip?nc=$GITHUB_RUN_ID" -o online.zip
+          URL=$(python3 -c "import json;print(json.load(open('online.json'))['download_url'])")
+          curl -fsSL -A "Toolkit-SD" "$URL" -o online.zip
           ZIP_SHA=$(sha256sum online.zip | cut -d' ' -f1)
           echo "online versie $ONLINE_V, controlesom info.json $ONLINE_SHA, zip $ZIP_SHA"
-          [ "$ONLINE_V" = "$V" ] || { echo "::error::info.json online toont $ONLINE_V"; exit 1; }
-          [ "$ONLINE_SHA" = "$ZIP_SHA" ] || { echo "::error::controlesom van de zip online klopt niet met info.json"; exit 1; }
+          [ "$ONLINE_V" = "$V" ] || { echo "::error::laatste release toont $ONLINE_V in plaats van $V"; exit 1; }
+          [ "$ONLINE_SHA" = "$ZIP_SHA" ] || { echo "::error::controlesom van de zip klopt niet met info.json"; exit 1; }
           echo "Toolkit SD $V staat online. Sites zien de update binnen 12 uur." >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Sleutel opruimen
-        if: always()
-        run: rm -f ~/.ssh/sg_key
