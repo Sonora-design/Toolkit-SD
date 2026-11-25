@@ -1,4 +1,4 @@
-/* Sonora design enhancements — beheerpagina */
+/* Toolkit SD — beheerpagina */
 ( function ( $ ) {
 	'use strict';
 

@@ -1,21 +1,21 @@
 <?php
 /**
- * Plugin Name:       Sonora design enhancements
- * Description:       Vaste uitbreidingen van Sonora design voor praktijkwebsites: REST-afscherming, loginpagina in Sonora-stijl, beheermenu per rol, redirect na inloggen en meer. Vervangt de Pro-functies van ASE.
- * Version:           1.2.2
+ * Plugin Name:       Toolkit SD
+ * Description:       Vaste toolkit van Sonora design voor praktijkwebsites: REST-afscherming, loginpagina in Sonora-stijl, beheermenu per rol, redirect na inloggen en meer. Vervangt de Pro-functies van ASE.
+ * Version:           1.3.0
  * Author:            Sonora design
  * Author URI:        https://sonoradesign.be
  * Requires at least: 6.4
  * Requires PHP:      7.4
  * License:           GPL-2.0-or-later
- * Text Domain:       sonora-design-enhancements
+ * Text Domain:       toolkit-sd
  */
 
 namespace SDE;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION = '1.2.2';
+const VERSION = '1.3.0';
 const OPTION  = 'sde_settings';
 define( 'SDE_FILE', __FILE__ );
 define( 'SDE_DIR', plugin_dir_path( __FILE__ ) );

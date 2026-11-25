@@ -1,6 +1,6 @@
 <?php
 /**
- * Beheerpagina: Instellingen > Sonora design.
+ * Beheerpagina: Instellingen > Toolkit SD.
  * Opbouw zoals Fluidly: bovenbalk, tabbladen, kaarten en schakelaars, opslaan zonder herladen.
  */
 
@@ -8,7 +8,7 @@ namespace SDE\Admin;
 
 defined( 'ABSPATH' ) || exit;
 
-const SLUG = 'sonora-design-enhancements';
+const SLUG = 'toolkit-sd';
 
 /** @var array Volledig beheermenu, vastgelegd vóór de module Beheermenu items weghaalt. */
 $GLOBALS['sde_menu_snapshot'] = array(
@@ -64,7 +64,7 @@ function login_url() {
 add_action(
 	'admin_menu',
 	function () {
-		add_options_page( 'Sonora design enhancements', 'Sonora design', 'manage_options', SLUG, __NAMESPACE__ . '\render' );
+		add_options_page( 'Toolkit SD', 'Toolkit SD', 'manage_options', SLUG, __NAMESPACE__ . '\render' );
 	}
 );
 
@@ -471,13 +471,13 @@ function render() {
 	$roles = roles();
 	?>
 	<div class="wrap sde-wrap">
-	<h1 class="screen-reader-text">Sonora design enhancements</h1>
+	<h1 class="screen-reader-text">Toolkit SD</h1>
 	<form id="sde-app" autocomplete="off">
 
 		<header class="sde-top">
 			<div class="sde-logo">
 				<span class="sde-mark">SD</span>
-				<strong>Sonora design enhancements</strong>
+				<strong>Toolkit SD</strong>
 				<span class="sde-ver">v<?php echo esc_html( \SDE\VERSION ); ?></span>
 			</div>
 			<div class="sde-top__actions">

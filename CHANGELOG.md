@@ -1,4 +1,10 @@
-# Sonora design enhancements – changelog
+# Toolkit SD – changelog
+
+## 1.3.0 – 2026-11-25
+
+- Nieuwe naam: **Toolkit SD** (voorheen Sonora design enhancements). Map en hoofdbestand heten nu `toolkit-sd/toolkit-sd.php`; de beheerpagina staat onder Instellingen > Toolkit SD.
+- Instellingen blijven behouden: ze staan nog altijd in de optie `sde_settings`.
+- README toegevoegd.
 
 ## 1.2.2 – 2026-11-23
 

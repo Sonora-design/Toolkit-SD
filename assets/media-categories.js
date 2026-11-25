@@ -1,4 +1,4 @@
-/* Sonora design enhancements: filter op mediacategorie in de rasterweergave en het mediavenster. */
+/* Toolkit SD: filter op mediacategorie in de rasterweergave en het mediavenster. */
 ( function () {
 	'use strict';
 

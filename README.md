@@ -1,8 +1,10 @@
-# Sonora design enhancements
+# Toolkit SD
 
 Eigen WordPress-plugin van Sonora design. Vervangt de functies van ASE Pro die we op klantsites gebruiken, zodat die sites op de gratis versie van ASE kunnen draaien.
 
-**Instellingen op de site:** Instellingen > Sonora design.
+**Instellingen op de site:** Instellingen > Toolkit SD.
+
+Vroeger heette deze plugin "Sonora design enhancements" (tot en met 1.2.2).
 
 ## Modules
 
@@ -25,7 +27,7 @@ Tabblad **Overstap ASE**: bekijken, overnemen, ASE-functies uitzetten (met back-
 
 ## Nieuwe versie uitbrengen
 
-1. Versienummer aanpassen in `sonora-design-enhancements.php` (koptekst en `VERSION`).
+1. Versienummer aanpassen in `toolkit-sd.php` (koptekst en `VERSION`).
 2. `CHANGELOG.md` aanvullen.
 3. Commit en tag `vX.Y.Z`, daarna een release met de zip.
 
