@@ -1,5 +1,10 @@
 # Toolkit SD – changelog
 
+## 1.6.1 – 2026-11-25
+
+- Gebruikers met meerdere rollen (bv. via ASE): wie de site mag instellen, wordt na het in- of uitloggen niet meer doorgestuurd door een regel voor een andere rol zoals Editor. Enkel een regel voor Administrator geldt dan nog.
+- Menu voor editors: wie naast Editor ook een rol met meer rechten heeft, krijgt het volledige menu. Editor samen met een rol met minder rechten (bv. Auteur) blijft afgeschermd.
+
 ## 1.6.0 – 2026-11-25
 
 - Nieuwe module **Menu voor editors afschermen** (staat standaard uit). Editors zien enkel Pagina's, Media en hun profiel. Wat plugins later aan het menu toevoegen, blijft voor hen verborgen.

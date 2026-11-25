@@ -16,7 +16,12 @@ function target( $setting, $user ) {
 	if ( ! ( $user instanceof \WP_User ) ) {
 		return '';
 	}
+	// Bij meerdere rollen: wie de site mag instellen, volgt enkel een regel voor administrator.
+	$admin = user_can( $user, 'manage_options' );
 	foreach ( \SDE\pairs( \SDE\settings()[ $setting ] ) as $role => $path ) {
+		if ( $admin && 'administrator' !== $role ) {
+			continue;
+		}
 		if ( '' !== $path && in_array( $role, (array) $user->roles, true ) ) {
 			return home_url( '/' . ltrim( $path, '/' ) );
 		}

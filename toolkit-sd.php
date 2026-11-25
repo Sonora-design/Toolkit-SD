@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Toolkit SD
  * Description:       Vaste toolkit van Sonora design voor praktijkwebsites: REST-afscherming, loginpagina in Sonora-stijl, beheermenu per rol, redirect na inloggen en meer. Vervangt de Pro-functies van ASE.
- * Version:           1.6.0
+ * Version:           1.6.1
  * Author:            Sonora design
  * Author URI:        https://sonoradesign.be
  * Requires at least: 6.4
@@ -15,7 +15,7 @@ namespace SDE;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION = '1.6.0';
+const VERSION = '1.6.1';
 const OPTION  = 'sde_settings';
 define( 'SDE_FILE', __FILE__ );
 define( 'SDE_DIR', plugin_dir_path( __FILE__ ) );
@@ -181,13 +181,38 @@ function restricted_roles() {
 }
 
 /**
- * Geldt het afgeschermde editormenu voor de huidige gebruiker? Administrators nooit.
+ * Geldt het afgeschermde editormenu voor de huidige gebruiker?
+ *
+ * Beslist op rechten, niet enkel op de rolnaam: wie de site mag instellen (manage_options)
+ * krijgt de afscherming nooit, ook niet als hij daarnaast editor is. Bij meerdere rollen geldt:
+ * wat één van de rollen mag zien, blijft zichtbaar. Een extra rol met rechten die de
+ * afgeschermde rollen niet hebben, heft de afscherming dus op; een extra rol met minder
+ * rechten (bv. editor + auteur) verandert niets.
  */
 function is_restricted_user() {
-	if ( ! is_user_logged_in() || is_super_admin() || user_has_role( array( 'administrator' ) ) ) {
+	if ( ! is_user_logged_in() || is_super_admin() || current_user_can( 'manage_options' ) || user_has_role( array( 'administrator' ) ) ) {
 		return false;
 	}
-	return user_has_role( restricted_roles() );
+	$mine       = (array) wp_get_current_user()->roles;
+	$restricted = array_intersect( $mine, restricted_roles() );
+	if ( ! $restricted ) {
+		return false;
+	}
+
+	$caps = function ( $role ) {
+		$r = get_role( $role );
+		return $r ? array_keys( array_filter( (array) $r->capabilities ) ) : array();
+	};
+	$base = array();
+	foreach ( $restricted as $role ) {
+		$base = array_merge( $base, $caps( $role ) );
+	}
+	foreach ( array_diff( $mine, $restricted ) as $role ) {
+		if ( array_diff( $caps( $role ), $base ) ) {
+			return false; // Deze rol mag meer dan de afgeschermde rollen.
+		}
+	}
+	return true;
 }
 
 // Modules laden.
