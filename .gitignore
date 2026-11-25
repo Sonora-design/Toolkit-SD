@@ -3,3 +3,4 @@ Thumbs.db
 *.zip
 *.sde-new
 node_modules/
+dist/

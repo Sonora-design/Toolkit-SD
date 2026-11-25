@@ -1,5 +1,11 @@
 # Toolkit SD – changelog
 
+## 1.4.0 – 2026-11-25
+
+- Updates via sonoradesign.be: de site kijkt twee keer per dag in `https://sonoradesign.be/updates/toolkit-sd/info.json`. Een nieuwe versie verschijnt bij Plugins en Dashboard > Updates, met de changelog onder "Details bekijken". Automatische updates kunnen per site aangezet worden.
+- Ander adres nodig (bv. om te testen)? Zet `define( 'SDE_UPDATE_URL', '…' );` in wp-config.php.
+- Bouwscript `bin/build.py` maakt de zip en het versiebestand.
+
 ## 1.3.0 – 2026-11-25
 
 - Nieuwe naam: **Toolkit SD** (voorheen Sonora design enhancements). Map en hoofdbestand heten nu `toolkit-sd/toolkit-sd.php`; de beheerpagina staat onder Instellingen > Toolkit SD.
