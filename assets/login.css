@@ -1,0 +1,331 @@
+/* ---------- Basis (ook voor het inlogvenster binnen het dashboard) ---------- */
+body.login {
+  font-family: 'Mulish', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+.wp-core-ui #wp-submit.button-primary {
+  background: var(--sde-accent);
+  border-color: var(--sde-accent);
+  color: #fff;
+}
+.wp-core-ui #wp-submit.button-primary:hover,
+.wp-core-ui #wp-submit.button-primary:focus {
+  background: var(--sde-accent-hover);
+  border-color: var(--sde-accent-hover);
+}
+
+/* ---------- Achtergrond ---------- */
+body.login:not(.interim-login) {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse 130% 110% at 50% 0%, var(--sde-bg-top) 0%, var(--sde-bg-top) 25%, var(--sde-bg-top-60) 60%, var(--sde-bg-top-0) 100%),
+    linear-gradient(180deg, var(--sde-bg-mid) 0%, var(--sde-bg-bottom) 100%)
+    var(--sde-bg-bottom);
+}
+
+/* ---------- Indeling: logo links, kaart rechts ---------- */
+body.login:not(.interim-login) #login {
+  display: grid;
+  grid-template-columns: auto minmax(0, 480px);
+  justify-content: center;
+  align-items: center;
+  column-gap: 120px;
+  width: min(1120px, calc(100% - 48px));
+  max-width: none;
+  margin: 0 auto;
+  padding: 48px 0;
+}
+body.login:not(.interim-login) #login > * {
+  grid-column: 2;
+}
+body.login:not(.interim-login) #login > h1 {
+  grid-column: 1;
+  grid-row: 1 / span 12;
+  justify-self: start;
+  margin: 0 0 40px; /* compenseert de link onder de kaart: logo en kaart op één lijn */
+  padding: 0;
+}
+
+/* Logo en domeinnaam */
+body.login:not(.interim-login) #login h1 a {
+  display: block;
+  width: var(--sde-logo-w) !important;
+  max-width: 100%;
+  height: var(--sde-logo-h) !important;
+  margin: 0;
+  background: url(%%LOGO%%) no-repeat center / contain !important;
+  pointer-events: none;
+}
+body.login:not(.interim-login) #login h1::after {
+  content: "%%DOMEIN%%";
+  display: block;
+  margin-top: 36px;
+  text-align: left;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: .01em;
+  color: var(--sde-ink);
+  opacity: .75;
+}
+
+/* ---------- Kaart: titel, meldingen en formulier vormen één wit blok ---------- */
+.sonora-login-intro {
+  position: relative;
+  z-index: 2;
+  margin-bottom: -1px;
+  padding: 48px 46px 12px;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+}
+.sonora-login-intro h2 {
+  margin: 0 0 8px;
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 800;
+  color: var(--sde-ink);
+}
+.sonora-login-intro p {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.45;
+  color: var(--sde-ink);
+}
+body.login:not(.interim-login) #login form {
+  margin: 0;
+  padding: 28px 46px 46px;
+  background: #fff;
+  border: 0;
+  border-radius: 0 0 16px 16px;
+  box-shadow: 0 34px 44px -14px var(--sde-ink-22);
+  overflow: visible;
+}
+
+/* Vaste hoogte voor inloggen en wachtwoord vergeten */
+body.login-action-login:not(.interim-login) .sonora-login-intro,
+body.login-action-lostpassword:not(.interim-login) .sonora-login-intro {
+  box-sizing: border-box;
+  min-height: 162px;
+}
+body.login-action-login:not(.interim-login) #login #loginform,
+body.login-action-lostpassword:not(.interim-login) #login #lostpasswordform {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 274px;
+  padding-top: 10px;
+}
+body.login-action-login:not(.interim-login) #loginform p.submit,
+body.login-action-lostpassword:not(.interim-login) #lostpasswordform p.submit {
+  margin-top: auto;
+}
+
+/* Meldingen (fout wachtwoord, e-mail verstuurd, ...) */
+body.login:not(.interim-login) #login_error,
+body.login:not(.interim-login) .message,
+body.login:not(.interim-login) .notice {
+  margin: 0;
+  padding: 16px 46px 0;
+  border: 0;
+  box-shadow: none;
+  background: #fff;
+  color: var(--sde-ink);
+}
+body.login:not(.interim-login) #login_error > p,
+body.login:not(.interim-login) .message > p,
+body.login:not(.interim-login) .notice > p {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border-left: 4px solid var(--sde-accent);
+  background: #eef6fa;
+  font-size: 15px;
+}
+body.login:not(.interim-login) #login_error > p,
+body.login:not(.interim-login) .notice-error > p {
+  border-left-color: #c62828;
+  background: #fdf0f0;
+}
+/* Standaarduitleg van WordPress: overbodig naast onze eigen uitleg */
+body.login-action-lostpassword .notice-info,
+body.login-action-rp .notice-info,
+body.login-action-resetpass .notice-info {
+  display: none;
+}
+
+/* ---------- Invoervelden ---------- */
+/* Labels enkel voor schermlezers; de placeholders tonen de tekst */
+#loginform label[for="user_login"],
+#loginform label[for="user_pass"],
+#lostpasswordform label[for="user_login"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+body.login:not(.interim-login) form .input,
+body.login:not(.interim-login) input[type="text"],
+body.login:not(.interim-login) input[type="password"] {
+  width: 100%;
+  height: 64px;
+  margin: 0 0 18px;
+  padding: 0 56px 0 22px;
+  font-family: inherit;
+  font-size: 17px;
+  color: var(--sde-ink);
+  background: #f7f9fb;
+  border: 1px solid #dce3ea;
+  border-radius: var(--sde-radius);
+  box-shadow: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+body.login:not(.interim-login) input::placeholder {
+  color: var(--sde-ink-60);
+}
+body.login:not(.interim-login) form .input:focus,
+body.login:not(.interim-login) input[type="text"]:focus,
+body.login:not(.interim-login) input[type="password"]:focus {
+  border-color: var(--sde-accent);
+  box-shadow: 0 0 0 3px var(--sde-accent-18);
+  outline: none;
+}
+/* Oogje om het wachtwoord te tonen */
+body.login:not(.interim-login) .button.wp-hide-pw {
+  top: 0;
+  right: 0;
+  width: 56px;
+  min-width: 56px;
+  height: 64px;
+  color: var(--sde-ink);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+body.login:not(.interim-login) .button.wp-hide-pw:focus {
+  box-shadow: 0 0 0 2px var(--sde-accent);
+  border-radius: var(--sde-radius);
+}
+
+/* ---------- Knop ---------- */
+body.login:not(.interim-login) .forgetmenot {
+  display: none;
+}
+body.login:not(.interim-login) p.submit {
+  clear: both;
+  margin: 18px 0 0;
+  padding: 0;
+}
+body.login:not(.interim-login) .submit #wp-submit {
+  float: none;
+  width: 100%;
+  height: 54px;
+  min-height: 54px;
+  padding: 0 16px;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: var(--sde-radius);
+  box-shadow: none;
+  text-shadow: none;
+  transition: background-color .2s;
+}
+body.login:not(.interim-login) .submit #wp-submit:focus {
+  box-shadow: 0 0 0 3px var(--sde-accent-35);
+}
+
+/* ---------- Link onder de kaart ---------- */
+body.login:not(.interim-login) #nav {
+  margin: 22px 0 0;
+  padding: 0;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+body.login:not(.interim-login) #nav a {
+  color: var(--sde-ink);
+  text-decoration: none;
+}
+body.login:not(.interim-login) #nav a:hover,
+body.login:not(.interim-login) #nav a:focus {
+  color: var(--sde-ink);
+  text-decoration: underline;
+  box-shadow: none;
+}
+body.login:not(.interim-login) #backtoblog,
+body.login:not(.interim-login) .privacy-policy-page-link,
+body.login:not(.interim-login) .language-switcher {
+  display: none;
+}
+
+/* ---------- Kleinere laptops ---------- */
+@media (max-width: 1180px) {
+  body.login:not(.interim-login) #login {
+    column-gap: 64px;
+  }
+  body.login:not(.interim-login) #login h1 a {
+    width: var(--sde-logo-w-md) !important;
+    height: var(--sde-logo-h-md) !important;
+  }
+}
+
+/* ---------- Tablet en gsm: onder elkaar ---------- */
+@media (max-width: 900px) {
+  body.login:not(.interim-login) #login {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 480px;
+    padding: 40px 0;
+  }
+  body.login:not(.interim-login) #login > * {
+    grid-column: 1;
+  }
+  body.login:not(.interim-login) #login > h1 {
+    grid-row: auto;
+    justify-self: center;
+    margin-bottom: 36px;
+    text-align: center;
+  }
+  body.login:not(.interim-login) #login h1 a {
+    width: var(--sde-logo-w-sm) !important;
+    height: var(--sde-logo-h-sm) !important;
+  }
+  body.login:not(.interim-login) #login h1::after {
+    margin-top: 22px;
+    text-align: center;
+    font-size: 16px;
+  }
+  .sonora-login-intro {
+    padding: 32px 24px 8px;
+  }
+  .sonora-login-intro h2 {
+    font-size: 28px;
+  }
+  .sonora-login-intro p {
+    font-size: 17px;
+  }
+  body.login:not(.interim-login) #login_error,
+  body.login:not(.interim-login) .message,
+  body.login:not(.interim-login) .notice {
+    padding: 12px 24px 0;
+  }
+  body.login:not(.interim-login) #login form {
+    padding: 22px 24px 32px;
+  }
+  body.login-action-login:not(.interim-login) #login #loginform,
+  body.login-action-lostpassword:not(.interim-login) #login #lostpasswordform {
+    height: 262px;
+    padding-top: 8px;
+  }
+}
+
+/* Heel smalle gsm's: 'Wachtwoord vergeten' loopt over twee regels */
+@media (max-width: 339px) {
+  body.login-action-login:not(.interim-login) .sonora-login-intro,
+  body.login-action-lostpassword:not(.interim-login) .sonora-login-intro {
+    min-height: 186px;
+  }
+}
