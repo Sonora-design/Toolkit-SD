@@ -41,16 +41,22 @@ Deze namen staan in de database van de klantsites. Wijzigen = instellingen kwijt
 2. Versie verhogen op **twee** plaatsen in `toolkit-sd.php`: koptekst `Version:` en `const VERSION`. Semver: fix = patch, nieuwe optie/module = minor.
 3. `CHANGELOG.md`: bovenaan `## X.Y.Z – JJJJ-MM-DD` met korte punten in het Nederlands (dit verschijnt bij "Details bekijken" in WordPress).
 4. `python3 bin/build.py` (controleert dat versie en changelog kloppen).
-5. Commit op `main`, tag `vX.Y.Z`, push met tags.
-6. Release op GitHub: `gh release create vX.Y.Z dist/toolkit-sd-X.Y.Z.zip --title "Toolkit SD X.Y.Z" --notes-file <changelog van deze versie>`.
-7. `dist/toolkit-sd-X.Y.Z.zip` en `dist/info.json` naar `sonoradesign.be/public_html/updates/toolkit-sd/` (zie "Publiceren"). Oude zips mogen blijven staan.
-8. Controleren: `curl -s https://sonoradesign.be/updates/toolkit-sd/info.json` toont de nieuwe versie, en de sha256 van de zip online = `sha256` in info.json.
+5. Commit en push naar `main`.
+6. Versielabel zetten en pushen: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+   Dat start de GitHub Action `.github/workflows/release.yml`, die automatisch:
+   - de zip en info.json bouwt en controleert dat label en versie overeenkomen;
+   - de GitHub-release maakt met de zip en de changelog van deze versie;
+   - eerst de zip, dan info.json op `sonoradesign.be/updates/toolkit-sd/` zet (SSH naar SiteGround);
+   - online nakijkt dat versie en controlesom kloppen.
+7. Volgen: `gh run watch` (of `gh run list --workflow release.yml`). Mislukt een stap, lees de log (`gh run view --log-failed`) en meld het aan Jurgen. Een label opnieuw gebruiken: eerst release en label verwijderen (`gh release delete vX.Y.Z --cleanup-tag`), dan pas opnieuw taggen.
 
-Vraag Jurgen altijd om bevestiging vóór stap 5 (push) en stap 7 (publiceren): vanaf dan zien alle klantsites de update.
+Vraag Jurgen altijd om bevestiging vóór stap 6 (label pushen): vanaf dan zien alle klantsites de update binnen 12 uur.
 
 ## Publiceren naar sonoradesign.be
 
-Nog in te richten (zie projectdocument). Tot dan: Jurgen zet de twee bestanden via Site Tools > Bestandsbeheer in `public_html/updates/toolkit-sd/`, of vraagt het in het Claude-project Sonora design.
+Gebeurt door de GitHub Action (stap 6), nooit rechtstreeks vanaf deze computer. De SSH-gegevens van SiteGround staan als secrets in GitHub (`SG_SSH_HOST`, `SG_SSH_PORT`, `SG_SSH_USER`, `SG_SSH_KEY`, `SG_SSH_PASSPHRASE`, optioneel `SG_KNOWN_HOSTS`). Nooit sleutels in de repository zetten.
+
+Doelmap op de server: `~/www/sonoradesign.be/public_html/updates/toolkit-sd/` (publiek: https://sonoradesign.be/updates/toolkit-sd/). Oude zips mogen blijven staan.
 
 ## Testen
 

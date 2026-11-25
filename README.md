@@ -29,9 +29,11 @@ Tabblad **Overstap ASE**: bekijken, overnemen, ASE-functies uitzetten (met back-
 
 1. Versienummer aanpassen in `toolkit-sd.php` (koptekst `Version:` en `const VERSION`).
 2. `CHANGELOG.md` aanvullen met een regel `## X.Y.Z – datum`.
-3. `python3 bin/build.py` maakt in `dist/` de zip en `info.json`.
-4. Commit op `main`, daarna op GitHub een release `vX.Y.Z` met de zip.
-5. Zip en `info.json` uploaden naar `sonoradesign.be/updates/toolkit-sd/`. Vanaf dan zien alle sites de update (binnen 12 uur, of meteen via Dashboard > Updates > Opnieuw controleren).
+3. `python3 bin/build.py` om te controleren.
+4. Commit en push naar `main`, daarna `git tag vX.Y.Z && git push origin vX.Y.Z`.
+5. De GitHub Action maakt de release en zet zip en `info.json` op `sonoradesign.be/updates/toolkit-sd/`. Alle sites zien de update binnen 12 uur (of meteen via Dashboard > Updates > Opnieuw controleren).
+
+De volledige werkwijze voor Claude Code staat in `CLAUDE.md`.
 
 ## Updates op de sites
 
