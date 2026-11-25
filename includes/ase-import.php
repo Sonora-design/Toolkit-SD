@@ -92,6 +92,153 @@ function menu_rules_from_ase( array $o, array $e ) {
 }
 
 /**
+ * Verbergt een menuregel ("doel | behalve: administrator", "| alleen: editor", "| iedereen") het item voor deze rol?
+ */
+function rule_hides_role( $rule, $role ) {
+	$rule = strtolower( trim( (string) $rule ) );
+	if ( 0 === strpos( $rule, 'iedereen' ) ) {
+		return true;
+	}
+	if ( preg_match( '/^(behalve|alleen)\s*:\s*(.*)$/', $rule, $m ) ) {
+		$in = in_array( $role, array_map( 'trim', explode( ',', $m[2] ) ), true );
+		return ( 'alleen' === $m[1] ) ? $in : ! $in;
+	}
+	return 'administrator' !== $role; // Standaard: behalve administrator.
+}
+
+/**
+ * Menu voor editors opbouwen uit ASE, zonder iets op te slaan of ASE te wijzigen.
+ *
+ * ASE houdt bij wat verborgen is; alles daarbuiten zag de editor. Het menu zoals de editor
+ * het nu ziet, wordt daarom de lijst van toegelaten items. Nieuwe items van plugins blijven
+ * daarna verborgen.
+ *
+ * @param array $snapshot Volledig menu: array( 'menu' => …, 'submenu' => … ).
+ * @return array{allow: string[], hide: string[], report: string[], ase: bool}
+ */
+function editor_from_ase( array $snapshot ) {
+	$o       = ase_options();
+	$e       = ase_extra();
+	$default = \SDE\lines( \SDE\defaults()['editor_allow'] );
+	$roles   = \SDE\restricted_roles();
+
+	if ( ! $o ) {
+		return array(
+			'allow'  => $default,
+			'hide'   => array(),
+			'report' => array( __( 'ASE is niet gevonden: de standaard geldt (Pagina\'s, Media, Profiel).', 'toolkit-sd' ) ),
+			'ase'    => false,
+		);
+	}
+
+	$lines = menu_rules_from_ase( $o, $e );
+	if ( ! $lines ) {
+		return array(
+			'allow'  => $default,
+			'hide'   => array(),
+			'report' => array( __( 'ASE verbergt geen menu-items per rol: de standaard geldt (Pagina\'s, Media, Profiel).', 'toolkit-sd' ) ),
+			'ase'    => false,
+		);
+	}
+
+	// Regels per doel.
+	$rules = array();
+	foreach ( $lines as $line ) {
+		$parts                                       = array_map( 'trim', explode( '|', $line, 2 ) );
+		$rules[ html_entity_decode( $parts[0] ) ] = $parts[1] ?? '';
+	}
+	$hidden = function ( $target ) use ( $rules, $roles ) {
+		if ( ! isset( $rules[ $target ] ) ) {
+			return false;
+		}
+		foreach ( $roles as $role ) {
+			if ( ! rule_hides_role( $rules[ $target ], $role ) ) {
+				return false; // Minstens één afgeschermde rol zag het.
+			}
+		}
+		return true;
+	};
+	$can = function ( $cap ) use ( $roles ) {
+		foreach ( $roles as $role ) {
+			$r = get_role( $role );
+			if ( $r && $r->has_cap( (string) $cap ) ) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	$allow = array();
+	$hide  = array();
+	foreach ( (array) ( $snapshot['menu'] ?? array() ) as $item ) {
+		if ( empty( $item[2] ) || ( isset( $item[4] ) && false !== strpos( (string) $item[4], 'wp-menu-separator' ) ) ) {
+			continue;
+		}
+		$slug = html_entity_decode( (string) $item[2] );
+		if ( ! $can( $item[1] ?? '' ) || $hidden( $slug ) ) {
+			continue;
+		}
+		$allow[] = $slug;
+		foreach ( (array) ( $snapshot['submenu'][ $item[2] ] ?? array() ) as $sub ) {
+			if ( empty( $sub[2] ) ) {
+				continue;
+			}
+			$target = $slug . ' > ' . html_entity_decode( (string) $sub[2] );
+			if ( $can( $sub[1] ?? '' ) && $hidden( $target ) ) {
+				$hide[] = $target;
+			}
+		}
+	}
+	// Profiel hoort er altijd bij (staat bij een editor als eigen menu-item).
+	if ( ! in_array( 'profile.php', $allow, true ) ) {
+		$allow[] = 'profile.php';
+	}
+
+	$report = array(
+		/* translators: %d: aantal menu-items */
+		sprintf( __( '%d menu-items overgenomen die editors in ASE zagen.', 'toolkit-sd' ), count( $allow ) ),
+	);
+	if ( $hide ) {
+		/* translators: %d: aantal submenu's */
+		$report[] = sprintf( __( '%d submenu\'s blijven verborgen, zoals in ASE.', 'toolkit-sd' ), count( $hide ) );
+	}
+	$report[] = __( 'Volgorde en namen van het menu blijven in ASE ingesteld en zijn niet overgenomen.', 'toolkit-sd' );
+	$report[] = __( 'Admin bar: ASE heeft geen lijst van zichtbare items, dus editors zien enkel hun profiel en afmelden.', 'toolkit-sd' );
+
+	return array(
+		'allow'  => array_values( array_unique( $allow ) ),
+		'hide'   => array_values( array_unique( $hide ) ),
+		'report' => $report,
+		'ase'    => true,
+	);
+}
+
+/**
+ * Menu voor editors uit ASE overnemen en opslaan in de instellingen van deze plugin.
+ * ASE zelf wordt niet gewijzigd. Zet de module niet aan.
+ *
+ * @param array $snapshot Volledig menu.
+ * @param bool  $notice   Melding tonen in het beheer.
+ */
+function import_editor_from_ase( array $snapshot, $notice = true ) {
+	$r = editor_from_ase( $snapshot );
+	$s = \SDE\settings( true );
+
+	$s['editor_allow']    = implode( "\n", $r['allow'] );
+	$s['editor_hide']     = implode( "\n", $r['hide'] );
+	$s['editor_migrated'] = true;
+	$s['editor_import']   = array(
+		'time'   => time(),
+		'report' => $r['report'],
+		'ase'    => $r['ase'],
+		'notice' => $notice && $r['ase'],
+	);
+	update_option( \SDE\OPTION, $s );
+	\SDE\settings( true );
+	return $r;
+}
+
+/**
  * Instellingen voor deze plugin opbouwen uit ASE, zonder iets op te slaan.
  *
  * @return array{settings: array, report: string[], not_covered: string[]}
@@ -225,6 +372,12 @@ function build_from_ase() {
  */
 function import_from_ase() {
 	$result = build_from_ase();
+	// Het menu voor editors heeft een eigen overname: die instellingen blijven staan.
+	$now = \SDE\settings( true );
+	foreach ( array( 'editor_allow', 'editor_hide', 'editor_bar_allow', 'editor_import', 'editor_migrated' ) as $key ) {
+		$result['settings'][ $key ] = $now[ $key ];
+	}
+	$result['settings']['modules']['editor_menu'] = ! empty( $now['modules']['editor_menu'] );
 	update_option( \SDE\OPTION, $result['settings'] );
 	return $result;
 }

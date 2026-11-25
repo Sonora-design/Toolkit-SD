@@ -1,5 +1,13 @@
 # Toolkit SD – changelog
 
+## 1.6.0 – 2026-11-25
+
+- Nieuwe module **Menu voor editors afschermen** (staat standaard uit). Editors zien enkel Pagina's, Media en hun profiel. Wat plugins later aan het menu toevoegen, blijft voor hen verborgen.
+- Verborgen beheerpagina's zijn voor editors ook echt afgesloten. Pagina's bewerken (ook met Elementor) en media opladen blijven gewoon werken. Het Dashboard blijft bereikbaar.
+- In de admin bar zien editors enkel hun profiel, afmelden, de link naar de site en "Bewerken".
+- De lijst kan je aanvullen in Beheermenu. Met "Herstel standaard" zet je ze terug.
+- Overname uit ASE: het menu zoals editors het in ASE zagen, wordt eenmalig overgenomen. Dat kan later opnieuw met de knop "Importeer uit ASE". ASE zelf wordt niet gewijzigd. Volgorde en namen van het menu blijven in ASE.
+
 ## 1.5.0 – 2026-11-25
 
 - De beheerpagina staat nu onder Extra > Toolkit SD (Tools in het Engels). Het oude adres onder Instellingen stuurt automatisch door.

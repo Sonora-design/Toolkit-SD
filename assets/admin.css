@@ -197,3 +197,11 @@
 	.sde-table thead th { position: static; }
 	.sde-menu-table .sde-mode { width: auto; }
 }
+
+/* Menu voor editors */
+.sde-allow { margin: 10px 0 14px; padding: 0; list-style: none; border: 1px solid var(--sde-line); border-radius: 10px; max-width: 640px; }
+.sde-allow:empty { display: none; }
+.sde-allow__item { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; padding: 8px 8px 8px 14px; border-top: 1px solid var(--sde-line); }
+.sde-allow__item:first-child { border-top: 0; }
+.sde-allow__item small { display: block; color: #646970; font-family: monospace; font-size: 12px; }
+.sde-sep { margin: 28px 0 8px; border: 0; border-top: 2px solid var(--sde-line); }

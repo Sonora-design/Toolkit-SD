@@ -21,6 +21,7 @@ function modules_info() {
 		'rest'             => array( 'REST API afschermen', 'Bezoekers krijgen enkel toegang tot de routes die nodig zijn, zoals de cookiebanner.', 'rest' ),
 		'login'            => array( 'Loginpagina in Sonora-stijl', 'Logo en domeinnaam links, witte kaart rechts, in je eigen kleuren.', 'login' ),
 		'admin_menu'       => array( 'Beheermenu per rol', 'Klanten zien enkel de menu-items die ze nodig hebben.', 'menu' ),
+		'editor_menu'      => array( __( 'Menu voor editors afschermen', 'toolkit-sd' ), __( 'Editors zien enkel Pagina\'s, Media en hun profiel. Andere beheerpagina\'s zijn voor hen afgesloten.', 'toolkit-sd' ), 'menu' ),
 		'login_redirect'   => array( 'Doorsturen na in- en uitloggen', 'Per rol naar een eigen pagina, bv. het klantendashboard.', 'redirects' ),
 		'admin_bar'        => array( 'Admin bar verbergen in de backend', 'Voor gekozen rollen, voor een rustiger beheer.', 'extra' ),
 		'media_categories' => array( 'Mediacategorieën', 'Bestanden ordenen in categorieën, zelfde indeling als ASE Pro.', 'extra' ),
@@ -94,6 +95,67 @@ add_action(
 		);
 	},
 	PHP_INT_MAX - 1
+);
+
+/*
+ * Menu voor editors: eenmalige overname uit ASE (bij de eerste lading na de update)
+ * of via de knop "Importeer uit ASE". Draait na de snapshot, dus met het volledige menu.
+ */
+add_action(
+	'admin_menu',
+	function () {
+		if ( ! current_user_can( 'manage_options' ) || wp_doing_ajax() ) {
+			return;
+		}
+		$snap = $GLOBALS['sde_menu_snapshot'];
+
+		// phpcs:ignore WordPress.Security.NonceVerification -- nonce wordt hieronder gecontroleerd.
+		if ( isset( $_GET['sde_editor_import'] ) ) {
+			check_admin_referer( 'sde_editor_import' );
+			\SDE\Ase\import_editor_from_ase( $snap );
+			wp_safe_redirect( page_url() . '#menu' );
+			exit;
+		}
+
+		if ( empty( \SDE\settings()['editor_migrated'] ) && ! empty( $snap['menu'] ) ) {
+			\SDE\Ase\import_editor_from_ase( $snap );
+		}
+	},
+	PHP_INT_MAX
+);
+
+function editor_import_url() {
+	return wp_nonce_url( add_query_arg( 'sde_editor_import', '1', page_url() ), 'sde_editor_import' );
+}
+
+// Melding na de overname uit ASE: raadt aan het verbergen per rol in ASE uit te zetten.
+add_action(
+	'admin_init',
+	function () {
+		// phpcs:ignore WordPress.Security.NonceVerification -- nonce wordt hieronder gecontroleerd.
+		if ( isset( $_GET['sde_editor_notice'] ) && current_user_can( 'manage_options' ) ) {
+			check_admin_referer( 'sde_editor_notice' );
+			$s                            = \SDE\settings( true );
+			$s['editor_import']['notice'] = false;
+			update_option( \SDE\OPTION, $s );
+			wp_safe_redirect( remove_query_arg( array( 'sde_editor_notice', '_wpnonce' ) ) );
+			exit;
+		}
+	}
+);
+
+add_action(
+	'admin_notices',
+	function () {
+		$imp = \SDE\settings()['editor_import'];
+		if ( empty( $imp['notice'] ) || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		$close = wp_nonce_url( add_query_arg( 'sde_editor_notice', 'dismiss' ), 'sde_editor_notice' );
+		echo '<div class="notice notice-info"><p><strong>' . esc_html__( 'Toolkit SD heeft het menu voor editors overgenomen uit ASE.', 'toolkit-sd' ) . '</strong> ';
+		echo esc_html__( 'Zet in ASE bij Admin Menu Organizer het verbergen per rol uit, zodat beide plugins elkaar niet tegenwerken. Volgorde en namen van het menu mag je in ASE laten staan.', 'toolkit-sd' ) . '</p>';
+		echo '<p><a href="' . esc_url( page_url() . '#menu' ) . '">' . esc_html__( 'Bekijk het menu voor editors', 'toolkit-sd' ) . '</a> · <a href="' . esc_url( $close ) . '">' . esc_html__( 'Melding sluiten', 'toolkit-sd' ) . '</a></p></div>';
+	}
 );
 
 add_filter(
@@ -287,6 +349,22 @@ function sanitize( array $in ) {
 	$out['admin_menu_rules'] = implode( "\n", array_unique( $rules ) );
 	$out['admin_bar_nodes']  = implode( "\n", array_map( 'sanitize_key', \SDE\lines( (string) ( $in['admin_bar_nodes'] ?? '' ) ) ) );
 
+	// Menu voor editors.
+	$allow = array();
+	foreach ( (array) ( $in['editor_allow'] ?? array() ) as $slug ) {
+		$slug = trim( sanitize_text_field( (string) $slug ) );
+		if ( '' !== $slug ) {
+			$allow[] = $slug;
+		}
+	}
+	$out['editor_allow']     = implode( "\n", array_unique( $allow ) );
+	$out['editor_hide']      = implode( "\n", \SDE\lines( sanitize_textarea_field( (string) ( $in['editor_hide'] ?? '' ) ) ) );
+	$out['editor_bar_allow'] = implode( "\n", array_map( 'sanitize_key', \SDE\lines( (string) ( $in['editor_bar_allow'] ?? '' ) ) ) );
+	// Niet via het formulier: blijven zoals ze opgeslagen zijn.
+	$now                    = \SDE\settings( true );
+	$out['editor_import']   = $now['editor_import'];
+	$out['editor_migrated'] = $now['editor_migrated'];
+
 	// Doorsturen.
 	foreach ( array( 'login_redirects' => 'login_redirect', 'logout_redirects' => 'logout_redirect' ) as $key => $field ) {
 		$lines = array();
@@ -473,6 +551,119 @@ function menu_row( $i, $target, $title, $is_sub, $rule ) {
 	echo '</select></td><td class="sde-roles-cell"' . ( in_array( $mode, array( 'except', 'only' ), true ) ? '' : ' data-off' ) . '>';
 	role_checks( 'sde[menu][' . (int) $i . '][roles]', $sel );
 	echo '</td></tr>';
+}
+
+/**
+ * Titels van de hoofdmenu-items uit de snapshot, per slug.
+ */
+function top_menu_titles() {
+	$out = array();
+	foreach ( (array) $GLOBALS['sde_menu_snapshot']['menu'] as $item ) {
+		if ( empty( $item[2] ) || ( isset( $item[4] ) && false !== strpos( (string) $item[4], 'wp-menu-separator' ) ) ) {
+			continue;
+		}
+		$out[ html_entity_decode( (string) $item[2] ) ] = menu_title( $item[0] );
+	}
+	// Bij een administrator staat Profiel onder Gebruikers; bij een editor is het een eigen item.
+	if ( ! isset( $out['profile.php'] ) ) {
+		$out['profile.php'] = __( 'Profiel', 'toolkit-sd' );
+	}
+	return $out;
+}
+
+function editor_row( $slug, $title ) {
+	printf(
+		'<li class="sde-allow__item" data-allow-item><span>%1$s<small>%2$s</small></span><input type="hidden" name="sde[editor_allow][]" value="%2$s"><button type="button" class="sde-btn sde-btn--ghost" data-allow-remove aria-label="%3$s">%4$s</button></li>',
+		esc_html( $title ),
+		esc_attr( $slug ),
+		/* translators: %s: naam van het menu-item */
+		esc_attr( sprintf( __( '%s verwijderen', 'toolkit-sd' ), $title ) ),
+		esc_html__( 'Verwijderen', 'toolkit-sd' )
+	);
+}
+
+/**
+ * Blok "Menu voor editors" in het tabblad Beheermenu.
+ */
+function editor_block( array $s ) {
+	$titles = top_menu_titles();
+	$allow  = array_map( 'html_entity_decode', \SDE\lines( $s['editor_allow'] ) );
+	$imp    = (array) $s['editor_import'];
+	$roles  = array_map(
+		function ( $r ) {
+			return roles()[ $r ] ?? $r;
+		},
+		\SDE\restricted_roles()
+	);
+	?>
+	<div class="sde-panehead">
+		<div>
+			<h2 class="sde-title"><?php esc_html_e( 'Menu voor editors', 'toolkit-sd' ); ?></h2>
+			<p class="sde-intro">
+				<?php
+				/* translators: %s: rollen, bv. Editor */
+				echo esc_html( sprintf( __( 'Voor %s staat enkel wat hieronder staat in het menu. Alles wat plugins later toevoegen, blijft verborgen, en andere beheerpagina\'s zijn voor hen afgesloten. Het Dashboard blijft bereikbaar. Administrators merken niets.', 'toolkit-sd' ), implode( ', ', $roles ) ) );
+				?>
+			</p>
+		</div>
+		<?php toggle( '', ! empty( $s['modules']['editor_menu'] ), __( 'Module aan', 'toolkit-sd' ), '', 'data-mirror="editor_menu"' ); ?>
+	</div>
+
+	<div class="sde-block">
+		<h3><?php esc_html_e( 'Zichtbaar voor editors', 'toolkit-sd' ); ?></h3>
+		<p class="sde-hint"><?php esc_html_e( 'Een item toont ook zijn submenu\'s.', 'toolkit-sd' ); ?></p>
+		<ul class="sde-allow" data-allow-list>
+			<?php
+			foreach ( $allow as $slug ) {
+				editor_row( $slug, $titles[ $slug ] ?? $slug );
+			}
+			?>
+		</ul>
+		<div class="sde-actions">
+			<select data-allow-pick data-ignore aria-label="<?php esc_attr_e( 'Menu-item kiezen', 'toolkit-sd' ); ?>">
+				<option value=""><?php esc_html_e( 'Item toevoegen…', 'toolkit-sd' ); ?></option>
+				<?php foreach ( $titles as $slug => $title ) : ?>
+					<option value="<?php echo esc_attr( $slug ); ?>" data-title="<?php echo esc_attr( $title ); ?>"><?php echo esc_html( $title . ' (' . $slug . ')' ); ?></option>
+				<?php endforeach; ?>
+			</select>
+			<button type="button" class="sde-btn" data-allow-add><?php esc_html_e( 'Toevoegen', 'toolkit-sd' ); ?></button>
+			<button type="button" class="sde-btn" data-allow-reset data-confirm="<?php esc_attr_e( 'De lijst terugzetten naar Pagina\'s, Media en Profiel?', 'toolkit-sd' ); ?>"><?php esc_html_e( 'Herstel standaard', 'toolkit-sd' ); ?></button>
+		</div>
+		<template data-allow-template><?php editor_row( '__slug__', '__title__' ); ?></template>
+	</div>
+
+	<details class="sde-details" <?php echo ( $s['editor_hide'] || $s['editor_bar_allow'] ) ? 'open' : ''; ?>>
+		<summary><?php esc_html_e( 'Meer instellingen', 'toolkit-sd' ); ?></summary>
+		<p class="sde-hint"><?php esc_html_e( 'Submenu\'s die toch verborgen blijven, één per regel, bv.', 'toolkit-sd' ); ?> <code>upload.php &gt; webp-converter</code></p>
+		<textarea name="<?php echo esc_attr( name( 'editor_hide' ) ); ?>" rows="3" class="sde-code-input"><?php echo esc_textarea( $s['editor_hide'] ); ?></textarea>
+		<p class="sde-hint"><?php esc_html_e( 'Admin bar: editors zien hun profiel, afmelden, de link naar de site en "Bewerken". Extra items (ID, één per regel) blijven met alles eronder zichtbaar, bv.', 'toolkit-sd' ); ?> <code>new-content</code></p>
+		<textarea name="<?php echo esc_attr( name( 'editor_bar_allow' ) ); ?>" rows="2" class="sde-code-input"><?php echo esc_textarea( $s['editor_bar_allow'] ); ?></textarea>
+	</details>
+
+	<div class="sde-block">
+		<h3><?php esc_html_e( 'Overnemen uit ASE', 'toolkit-sd' ); ?></h3>
+		<p class="sde-hint"><?php esc_html_e( 'Neemt het menu over zoals editors het nu in ASE zien. ASE zelf wordt niet gewijzigd. Volgorde en namen van het menu blijven in ASE.', 'toolkit-sd' ); ?></p>
+		<?php if ( ! empty( $imp['time'] ) ) : ?>
+			<div class="sde-report">
+				<p>
+					<?php
+					/* translators: %s: datum en uur */
+					echo esc_html( sprintf( __( 'Laatste overname: %s', 'toolkit-sd' ), wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $imp['time'] ) ) );
+					?>
+				</p>
+				<ul>
+					<?php foreach ( (array) ( $imp['report'] ?? array() ) as $line ) : ?>
+						<li><?php echo esc_html( $line ); ?></li>
+					<?php endforeach; ?>
+				</ul>
+			</div>
+		<?php endif; ?>
+		<div class="sde-actions sde-spaced">
+			<a class="sde-btn" href="<?php echo esc_url( editor_import_url() ); ?>" data-confirm="<?php esc_attr_e( 'De lijst voor editors vervangen door wat in ASE staat? Niet opgeslagen wijzigingen gaan verloren.', 'toolkit-sd' ); ?>"><?php esc_html_e( 'Importeer uit ASE', 'toolkit-sd' ); ?></a>
+		</div>
+	</div>
+	<hr class="sde-sep">
+	<?php
 }
 
 /* -------------------------------------------------------------------------
@@ -663,6 +854,8 @@ function render() {
 
 		<?php /* ---------------- Beheermenu ---------------- */ ?>
 		<section class="sde-pane" data-pane="menu" hidden>
+			<?php editor_block( $s ); ?>
+
 			<div class="sde-panehead">
 				<div>
 					<h2 class="sde-title">Beheermenu per rol</h2>

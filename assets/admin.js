@@ -208,6 +208,67 @@
 	$form.on( 'input', '[data-menu-search]', filterMenu );
 	$form.on( 'change', '[data-only-rules]', filterMenu );
 
+	/* ---------- menu voor editors ---------- */
+
+	var allowList = form.querySelector( '[data-allow-list]' );
+
+	function allowTitle( slug ) {
+		var opt = form.querySelector( '[data-allow-pick] option[value="' + ( window.CSS && CSS.escape ? CSS.escape( slug ) : slug ) + '"]' );
+		return opt ? opt.getAttribute( 'data-title' ) : slug;
+	}
+
+	function addAllow( slug, quiet ) {
+		if ( ! allowList || ! slug ) {
+			return;
+		}
+		var exists = Array.prototype.some.call( allowList.querySelectorAll( 'input' ), function ( i ) {
+			return i.value === slug;
+		} );
+		if ( exists ) {
+			if ( ! quiet ) {
+				toast( 'Dit item staat al in de lijst.' );
+			}
+			return;
+		}
+		var title = allowTitle( slug );
+		var li    = form.querySelector( '[data-allow-template]' ).content.firstElementChild.cloneNode( true );
+		li.querySelector( 'span' ).firstChild.textContent = title;
+		li.querySelector( 'small' ).textContent = slug;
+		li.querySelector( 'input' ).value = slug;
+		li.querySelector( 'button' ).setAttribute( 'aria-label', title + ' verwijderen' );
+		allowList.appendChild( li );
+		setDirty( true );
+	}
+
+	$form.on( 'click', '[data-allow-add]', function () {
+		var pick = form.querySelector( '[data-allow-pick]' );
+		addAllow( pick.value );
+		pick.value = '';
+	} );
+	$form.on( 'click', '[data-allow-remove]', function () {
+		this.closest( '[data-allow-item]' ).remove();
+		setDirty( true );
+	} );
+	$form.on( 'click', '[data-allow-reset]', function () {
+		if ( ! window.confirm( this.getAttribute( 'data-confirm' ) ) ) {
+			return;
+		}
+		allowList.innerHTML = '';
+		String( ( cfg.defaults && cfg.defaults.editor_allow ) || '' ).split( '\n' ).forEach( function ( slug ) {
+			addAllow( slug.trim(), true );
+		} );
+		setDirty( true );
+		toast( 'Standaard teruggezet. Vergeet niet op te slaan.' );
+	} );
+	// Links met een bevestiging (bv. Importeer uit ASE).
+	$form.on( 'click', 'a[data-confirm]', function ( e ) {
+		if ( ! window.confirm( this.getAttribute( 'data-confirm' ) ) ) {
+			e.preventDefault();
+			return;
+		}
+		dirty = false;
+	} );
+
 	/* ---------- opslaan ---------- */
 
 	form.addEventListener( 'submit', function ( e ) {

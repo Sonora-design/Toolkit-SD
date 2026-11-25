@@ -15,6 +15,7 @@ Alle modules staan standaard uit. Een nieuwe installatie verandert niets tot ze 
 | REST API afschermen | Bezoekers krijgen enkel de routes die nodig zijn (SureCookie, Independent Analytics, Novamira-inlogkoppeling). |
 | Loginpagina in Sonora-stijl | Logo, teksten, kleuren en afronding instelbaar, met live voorbeeld. |
 | Beheermenu per rol | Menu-items verbergen of tonen per rol. |
+| Menu voor editors afschermen | Editors zien enkel de toegelaten items (standaard Pagina's, Media, Profiel); andere beheerpagina's en admin bar-items zijn voor hen afgesloten. Overname uit ASE zonder ASE te wijzigen. Andere rollen via de filter `toolkit_sd_restricted_roles`. |
 | Doorsturen | Per rol een pagina na in- en uitloggen. |
 | Admin bar in de backend | Verbergen voor gekozen rollen. |
 | Mediacategorieën | Zelfde categorieën als ASE Pro, met filter in het mediavenster. |

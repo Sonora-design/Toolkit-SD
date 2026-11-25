@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Toolkit SD
  * Description:       Vaste toolkit van Sonora design voor praktijkwebsites: REST-afscherming, loginpagina in Sonora-stijl, beheermenu per rol, redirect na inloggen en meer. Vervangt de Pro-functies van ASE.
- * Version:           1.5.0
+ * Version:           1.6.0
  * Author:            Sonora design
  * Author URI:        https://sonoradesign.be
  * Requires at least: 6.4
@@ -15,7 +15,7 @@ namespace SDE;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION = '1.5.0';
+const VERSION = '1.6.0';
 const OPTION  = 'sde_settings';
 define( 'SDE_FILE', __FILE__ );
 define( 'SDE_DIR', plugin_dir_path( __FILE__ ) );
@@ -36,6 +36,7 @@ function defaults() {
 			'media_categories' => false,
 			'email_obfuscate'  => false,
 			'hide_notices'     => false,
+			'editor_menu'      => false,
 		),
 
 		// REST API.
@@ -76,6 +77,13 @@ function defaults() {
 		// Beheermenu.
 		'admin_menu_rules'    => '',      // Eén regel per item, zie modules/admin-menu.php.
 		'admin_bar_nodes'     => '',      // Items uit de admin bar, één per regel.
+
+		// Menu voor editors (allowlist).
+		'editor_allow'        => "edit.php?post_type=page\nupload.php\nprofile.php",
+		'editor_hide'         => '',      // Submenu's die toch verborgen blijven: "parent > slug".
+		'editor_bar_allow'    => '',      // Extra admin bar-items (met wat eronder hangt).
+		'editor_import'       => array(), // Laatste overname uit ASE: time, report, notice.
+		'editor_migrated'     => false,   // Eenmalige overname uit ASE al gebeurd.
 
 		// Redirects: rol=/pad/ per regel.
 		'login_redirects'     => 'editor=/dashboard/',
@@ -164,6 +172,24 @@ function user_has_role( array $roles, $user = null ) {
 	return (bool) array_intersect( $roles, (array) $user->roles );
 }
 
+/**
+ * Rollen waarvoor het afgeschermde editormenu geldt (filter toolkit_sd_restricted_roles).
+ */
+function restricted_roles() {
+	$roles = (array) apply_filters( 'toolkit_sd_restricted_roles', array( 'editor' ) );
+	return array_values( array_diff( array_map( 'sanitize_key', $roles ), array( 'administrator' ) ) );
+}
+
+/**
+ * Geldt het afgeschermde editormenu voor de huidige gebruiker? Administrators nooit.
+ */
+function is_restricted_user() {
+	if ( ! is_user_logged_in() || is_super_admin() || user_has_role( array( 'administrator' ) ) ) {
+		return false;
+	}
+	return user_has_role( restricted_roles() );
+}
+
 // Modules laden.
 $sde_modules = array(
 	'rest'             => 'modules/rest.php',
@@ -174,6 +200,7 @@ $sde_modules = array(
 	'media_categories' => 'modules/media-categories.php',
 	'email_obfuscate'  => 'modules/email-obfuscate.php',
 	'hide_notices'     => 'modules/hide-notices.php',
+	'editor_menu'      => 'modules/editor-menu.php',
 );
 foreach ( $sde_modules as $sde_key => $sde_file ) {
 	if ( module_on( $sde_key ) ) {
