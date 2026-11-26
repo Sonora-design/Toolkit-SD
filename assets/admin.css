@@ -177,6 +177,16 @@
 .sde-report h4 { margin: 0 0 4px; font-size: 13px; }
 .sde-report h4 + ul { margin-bottom: 10px; }
 
+.sde-tagged { margin-left: 0 !important; list-style: none !important; }
+.sde-tagged li { margin-bottom: 6px; }
+.sde-tag { display: inline-block; margin-right: 6px; padding: 1px 8px; border-radius: 999px; background: var(--sde-accent); color: #fff; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.sde-tag--ase { background: #fff; color: var(--sde-text); border: 1px solid #c3c4c7; }
+
+/* ---------- waarschuwing en tip in een tabblad ---------- */
+.sde-note { margin: 0 0 16px; padding: 10px 14px; border-left: 4px solid var(--sde-warn); border-radius: 6px; background: #fcf0f1; font-size: 13px; line-height: 1.5; }
+.sde-note--tip { border-left-color: var(--sde-accent); background: var(--sde-soft); }
+.sde-note[hidden] { display: none; }
+
 /* ---------- melding ---------- */
 .sde-toast { position: fixed; right: 24px; bottom: 24px; z-index: 99999; max-width: 420px; padding: 12px 16px; border-radius: 8px; background: #1d2327; color: #fff; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
 .sde-toast.is-error { background: #b32d2e; }

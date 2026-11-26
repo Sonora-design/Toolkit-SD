@@ -1,5 +1,15 @@
 # Toolkit SD – changelog
 
+## 1.7.0 – 2026-11-26
+
+- Nieuwe regel: **gratis ASE eerst**. Wat ASE gratis kan, blijft in ASE. Toolkit SD vult enkel aan wat Pro is, en geen functie wordt nog door beide plugins tegelijk uitgevoerd.
+- REST API: staat in ASE "Disable REST API" aan, dan sluit ASE af voor bezoekers en geeft Toolkit SD enkel de uitzonderingen vrij (eigen routes, SureCookie, Independent Analytics, Novamira en het overzicht /wp-json/). De filter draait nu op prioriteit 300, na ASE (200). De beperking per rol blijft in Toolkit SD.
+- REST API: is ASE niet actief of staat "Disable REST API" uit, dan sluit Toolkit SD zelf af, als vangnet. Staat het in ASE uit, dan verschijnt een melding om het daar aan te zetten.
+- Doorsturen: waarschuwing als ASE ook doorstuurt na in- of uitloggen. ASE stuurt meteen door, waardoor de instelling van Toolkit SD niet meer aan bod komt. Gaan alle rollen naar hetzelfde adres, dan krijg je de tip dat dit ook met ASE gratis kan.
+- Overname uit ASE: doorsturen wordt enkel overgenomen als rollen een verschillend adres hebben. De shortcode [obfuscate] enkel als de site link, subject of text gebruikt, of als ASE alle adressen in de inhoud verbergt. Admin bar-items enkel als ASE gratis ze niet kan verbergen. De beperking van de REST API per rol wordt mee overgenomen.
+- "ASE-functies uitzetten" zet in ASE enkel uit wat Toolkit SD overgenomen heeft. "Disable REST API" gaat in ASE juist aan, en doorsturen naar één adres blijft in ASE (zo nodig omgezet naar één adres voor de gekozen rollen). De back-up en "ASE terugzetten" werken zoals voorheen.
+- Overstap ASE: bij elk onderdeel staat "Pro → Toolkit SD" of "Gratis → blijft in ASE", met een samenvatting van wat er in ASE verandert.
+
 ## 1.6.1 – 2026-11-25
 
 - Gebruikers met meerdere rollen (bv. via ASE): wie de site mag instellen, wordt na het in- of uitloggen niet meer doorgestuurd door een regel voor een andere rol zoals Editor. Enkel een regel voor Administrator geldt dan nog.

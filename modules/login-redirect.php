@@ -6,6 +6,10 @@
  *   editor=/dashboard/
  *   manager=/dashboard/
  * Rollen zonder regel gaan naar de standaardpagina van WordPress.
+ *
+ * Eén adres voor alle rollen kan ook met ASE gratis. Staat doorsturen in ASE aan, dan
+ * stuurt ASE meteen door (met exit) en komt deze module niet meer aan bod: de pagina
+ * "Doorsturen" waarschuwt daarvoor.
  */
 
 namespace SDE\LoginRedirect;

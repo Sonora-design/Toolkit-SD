@@ -158,6 +158,55 @@ add_action(
 	}
 );
 
+/**
+ * REST: ASE is actief, maar sluit niet zelf af. Toolkit SD doet het dan als vangnet.
+ */
+function rest_needs_ase() {
+	return \SDE\module_on( 'rest' ) && \SDE\Ase\ase_active() && ! \SDE\Ase\ase_rest_on();
+}
+
+function rest_ase_text() {
+	return __( 'Zet Disable REST API aan in ASE. Toolkit SD beheert enkel de uitzonderingen.', 'toolkit-sd' );
+}
+
+add_action(
+	'admin_notices',
+	function () {
+		if ( ! current_user_can( 'manage_options' ) || ! rest_needs_ase() ) {
+			return;
+		}
+		$screen = get_current_screen();
+		if ( $screen && 'tools_page_' . SLUG === $screen->id ) {
+			return; // Staat al op de REST-pagina van Toolkit SD zelf.
+		}
+		echo '<div class="notice notice-warning"><p><strong>Toolkit SD:</strong> ' . esc_html( rest_ase_text() ) . ' <a href="' . esc_url( page_url() . '#rest' ) . '">' . esc_html__( 'Bekijk de REST-instellingen', 'toolkit-sd' ) . '</a></p></div>';
+	}
+);
+
+/**
+ * Melding of tip binnen de beheerpagina.
+ *
+ * @param string $kind  warn of tip.
+ * @param string $attrs Vaste attributen uit de code.
+ */
+function note( $text, $kind = 'warn', $attrs = '' ) {
+	printf(
+		'<p class="sde-note sde-note--%1$s" %2$s>%3$s</p>',
+		esc_attr( $kind ),
+		$attrs, // phpcs:ignore WordPress.Security.EscapeOutput -- vaste attributen uit de code.
+		esc_html( $text )
+	);
+}
+
+/**
+ * Hebben alle ingevulde rollen hetzelfde adres (na inloggen en na uitloggen)? Dat kan ASE gratis ook.
+ */
+function redirects_uniform( array $s ) {
+	$in  = array_filter( \SDE\pairs( $s['login_redirects'] ), 'strlen' );
+	$out = array_filter( \SDE\pairs( $s['logout_redirects'] ), 'strlen' );
+	return ( $in || $out ) && count( array_unique( $in ) ) <= 1 && count( array_unique( $out ) ) <= 1;
+}
+
 add_filter(
 	'plugin_action_links_' . plugin_basename( SDE_FILE ),
 	function ( $links ) {
@@ -251,13 +300,28 @@ add_action(
 		guard();
 		$do = isset( $_POST['do'] ) ? sanitize_key( $_POST['do'] ) : '';
 		if ( 'preview' === $do ) {
-			wp_send_json_success( \SDE\Ase\build_from_ase() );
+			$r = \SDE\Ase\build_from_ase();
+			// Wat "ASE-functies uitzetten" daarna in ASE verandert, uitgaand van deze overname.
+			$plan = \SDE\Ase\plan_switch( $r['settings'], \SDE\Ase\ase_options(), \SDE\Ase\ase_extra() );
+			wp_send_json_success(
+				array(
+					'items'       => $r['items'],
+					'not_covered' => $r['not_covered'],
+					'ase_changes' => $plan['changes'],
+				)
+			);
 		} elseif ( 'import' === $do ) {
-			$r = \SDE\Ase\import_from_ase();
-			wp_send_json_success( array( 'message' => 'Overgenomen uit ASE: ' . ( $r['report'] ? implode( '; ', $r['report'] ) : 'niets gevonden' ) . '.' ) );
+			$r     = \SDE\Ase\import_from_ase();
+			$stays = count( $r['items'] ) - count( $r['report'] );
+			wp_send_json_success( array( 'message' => 'Overgenomen uit ASE: ' . ( $r['report'] ? implode( '; ', $r['report'] ) : 'niets' ) . '.' . ( $stays ? ' ' . $stays . ( 1 === $stays ? ' onderdeel blijft' : ' onderdelen blijven' ) . ' in ASE (gratis).' : '' ) ) );
 		} elseif ( 'switch' === $do ) {
 			$c = \SDE\Ase\switch_from_ase();
-			wp_send_json_success( array( 'message' => $c ? 'Uitgezet in ASE: ' . implode( ', ', $c ) . '. Back-up bewaard.' : 'Er was niets meer uit te zetten in ASE.' ) );
+			wp_send_json_success(
+				array(
+					'message' => $c ? 'ASE is aangepast. Back-up bewaard.' : 'Er was niets aan te passen in ASE.',
+					'list'    => $c,
+				)
+			);
 		} elseif ( 'restore' === $do ) {
 			wp_send_json_success( array( 'message' => \SDE\Ase\restore_ase() ? 'ASE-instellingen teruggezet uit de back-up.' : 'Geen back-up gevonden.' ) );
 		}
@@ -722,10 +786,15 @@ function render() {
 			<div class="sde-panehead">
 				<div>
 					<h2 class="sde-title">REST API afschermen</h2>
-					<p class="sde-intro">Bezoekers zonder login krijgen enkel de routes hieronder. Ingelogde gebruikers en de Novamira-koppeling werken gewoon. Zet "Disable REST API" in ASE uit als deze module aan staat.</p>
+					<p class="sde-intro">Bezoekers zonder login krijgen enkel de routes hieronder. Ingelogde gebruikers en de Novamira-koppeling werken gewoon. Draait ASE op de site, dan sluit ASE af met "Disable REST API" en beheert Toolkit SD de uitzonderingen. Zonder ASE sluit Toolkit SD zelf af.</p>
 				</div>
 				<?php toggle( '', ! empty( $s['modules']['rest'] ), 'Module aan', '', 'data-mirror="rest"' ); ?>
 			</div>
+			<?php
+			if ( rest_needs_ase() ) {
+				note( rest_ase_text() . ' ' . __( 'Tot dan sluit Toolkit SD zelf af.', 'toolkit-sd' ) );
+			}
+			?>
 
 			<div class="sde-block">
 				<h3>Automatisch toelaten</h3>
@@ -925,6 +994,27 @@ function render() {
 			<?php
 			$in_map  = \SDE\pairs( $s['login_redirects'] );
 			$out_map = \SDE\pairs( $s['logout_redirects'] );
+
+			// Beide aan: ASE stuurt meteen door, waardoor Toolkit SD niet meer aan bod komt.
+			$ase_on = \SDE\Ase\ase_redirects_on();
+			if ( $ase_on ) {
+				$names = array(
+					'login'  => 'Redirect after login',
+					'logout' => 'Redirect after logout',
+				);
+				note(
+					sprintf(
+						/* translators: %s: naam van de functie(s) in ASE */
+						__( 'Let op: in ASE staat "%s" ook aan. ASE stuurt meteen door, waardoor wat je hier instelt niet meer aan bod komt. Zet het in ASE uit, of zet deze module uit als alle rollen naar hetzelfde adres gaan.', 'toolkit-sd' ),
+						implode( '" en "', array_intersect_key( $names, array_flip( $ase_on ) ) )
+					),
+					'warn',
+					'data-if-module="login_redirect"'
+				);
+			}
+			if ( \SDE\Ase\ase_active() && redirects_uniform( $s ) ) {
+				note( __( 'Tip: alle rollen gaan naar hetzelfde adres. Dit kan ook met ASE gratis.', 'toolkit-sd' ), 'tip', 'data-if-module="login_redirect"' );
+			}
 			?>
 			<table class="sde-table">
 				<thead><tr><th>Rol</th><th>Na inloggen</th><th>Na uitloggen</th></tr></thead>
@@ -961,7 +1051,7 @@ function render() {
 				<div class="sde-blockhead"><h3>E-mailadressen verbergen voor spambots</h3><?php toggle( '', ! empty( $s['modules']['email_obfuscate'] ), 'Aan', '', 'data-mirror="email_obfuscate"' ); ?></div>
 				<p class="sde-hint">Bezoekers zien en gebruiken het adres gewoon. Eenvoudige spambots kunnen het niet lezen.</p>
 
-				<?php toggle( name( 'email_shortcode' ), ! empty( $s['email_shortcode'] ), 'Shortcode [obfuscate]', 'Zelfde schrijfwijze als in ASE. Een klikbare link (link="yes") werkt ook, zoals in ASE Pro. Vervangt de shortcode van ASE.' ); ?>
+				<?php toggle( name( 'email_shortcode' ), ! empty( $s['email_shortcode'] ), 'Shortcode [obfuscate]', 'Zelfde schrijfwijze als in ASE. Een klikbare link (link="yes") werkt ook, zoals in ASE Pro. Vervangt de shortcode van ASE. Gebruik je geen link, subject of text, dan volstaat de shortcode van ASE gratis.' ); ?>
 				<?php toggle( name( 'email_auto' ), ! empty( $s['email_auto'] ), 'Alle e-mailadressen in de inhoud automatisch verbergen', 'Ook gewone mailto-links en adressen die niet via de shortcode staan.' ); ?>
 				<?php toggle( name( 'email_visitors_only' ), ! empty( $s['email_visitors_only'] ), 'Enkel voor bezoekers die niet ingelogd zijn', 'Ingelogd zie je het adres zoals het in de inhoud staat.' ); ?>
 
@@ -1046,16 +1136,17 @@ function render() {
 		<section class="sde-pane" data-pane="ase" hidden>
 			<h2 class="sde-title">Overstap van ASE Pro</h2>
 			<p class="sde-intro">Gevonden: <strong><?php echo esc_html( ase_status() ); ?></strong>.<?php echo get_option( \SDE\Ase\BACKUP_OPT ) ? ' Er is een back-up van de ASE-instellingen.' : ''; ?></p>
+			<p class="sde-intro">Wat ASE gratis kan, blijft in ASE. Toolkit SD neemt enkel over wat Pro is, zodat geen functie dubbel werkt.</p>
 			<ol class="sde-steps">
-				<li><strong>Bekijk</strong> wat er uit ASE overgenomen kan worden.</li>
+				<li><strong>Bekijk</strong> wat Toolkit SD overneemt en wat in ASE blijft.</li>
 				<li><strong>Overnemen</strong> vult de instellingen van deze plugin (overschrijft wat hier staat).</li>
-				<li><strong>ASE-functies uitzetten</strong> schakelt de overgenomen functies in ASE uit. Er wordt eerst een back-up gemaakt.</li>
+				<li><strong>ASE-functies uitzetten</strong> zet in ASE uit wat Toolkit SD overgenomen heeft, en zet aan of om wat in ASE gratis blijft (bv. Disable REST API). Er wordt eerst een back-up gemaakt.</li>
 				<li>Vervang daarna ASE Pro door de gratis versie van ASE.</li>
 			</ol>
 			<div class="sde-actions">
 				<button type="button" class="sde-btn" data-ase="preview">Bekijk wat overgenomen wordt</button>
 				<button type="button" class="sde-btn" data-ase="import" data-confirm="De instellingen van deze plugin overschrijven met wat in ASE staat?">Overnemen uit ASE</button>
-				<button type="button" class="sde-btn" data-ase="switch" data-confirm="De overgenomen functies in ASE uitzetten? Er wordt eerst een back-up gemaakt.">ASE-functies uitzetten</button>
+				<button type="button" class="sde-btn" data-ase="switch" data-confirm="ASE afstemmen op Toolkit SD? Wat Toolkit SD overgenomen heeft gaat in ASE uit, wat gratis in ASE blijft gaat aan of wordt omgezet. Er wordt eerst een back-up gemaakt.">ASE-functies uitzetten</button>
 				<button type="button" class="sde-btn sde-btn--danger" data-ase="restore" data-confirm="ASE-instellingen terugzetten uit de back-up?">ASE terugzetten</button>
 			</div>
 			<div data-ase-result class="sde-spaced"></div>

@@ -6,7 +6,11 @@
  *   eventueel beperkt tot bepaalde rollen.
  * - Bezoekers: enkel de toegelaten routes (en desgewenst de index /wp-json/).
  * - SureCookie en Independent Analytics worden automatisch toegelaten als ze actief zijn.
- * - Werkt ook als ASE "Disable REST API" nog aan staat: toegelaten routes worden dan vrijgegeven.
+ *
+ * Samen met ASE (gratis eerst):
+ * - Staat in ASE "Disable REST API" aan, dan sluit ASE af voor bezoekers (prioriteit 200).
+ *   Deze module draait daarna (300) en geeft enkel de toegelaten routes vrij.
+ * - Is ASE niet actief of staat "Disable REST API" uit, dan sluit deze module zelf af, als vangnet.
  */
 
 namespace SDE\Rest;
@@ -72,29 +76,40 @@ function blocked() {
 	);
 }
 
+/**
+ * Sluit ASE zelf af voor bezoekers? Dan blokkeert deze module niet dubbel.
+ */
+function ase_blocks() {
+	return function_exists( '\SDE\Ase\ase_rest_on' ) && \SDE\Ase\ase_rest_on();
+}
+
 add_filter(
 	'rest_authentication_errors',
 	function ( $result ) {
-		$s = \SDE\settings();
+		$s       = \SDE\settings();
+		$allowed = is_allowed( current_route() );
+
+		// Toegelaten route: een blokkering door ASE (of door ons) vrijgeven; andere fouten blijven staan.
+		if ( $allowed && is_wp_error( $result ) && 'rest_api_authentication_required' === $result->get_error_code() ) {
+			$result = null;
+		}
 
 		if ( is_user_logged_in() ) {
 			// Administrators houden altijd toegang (ook de Novamira-koppeling).
 			$roles = array_merge( array( 'administrator' ), (array) $s['rest_roles'] );
-			if ( 'some' === $s['rest_roles_mode'] && ! \SDE\user_has_role( $roles ) && ! is_allowed( current_route() ) ) {
+			if ( 'some' === $s['rest_roles_mode'] && ! $allowed && ! \SDE\user_has_role( $roles ) ) {
 				return is_wp_error( $result ) ? $result : blocked();
 			}
 			return $result;
 		}
 
-		if ( is_allowed( current_route() ) ) {
-			// Een blokkering door ASE (of door ons) vrijgeven; andere fouten blijven staan.
-			if ( is_wp_error( $result ) && 'rest_api_authentication_required' === $result->get_error_code() ) {
-				return null;
-			}
+		// Bezoeker op een toegelaten route, of ASE sluit zelf af: niets meer te doen.
+		if ( $allowed || ase_blocks() ) {
 			return $result;
 		}
 
+		// Vangnet: ASE is niet actief of "Disable REST API" staat uit.
 		return empty( $result ) ? blocked() : $result;
 	},
-	99
+	300 // Na ASE (200).
 );

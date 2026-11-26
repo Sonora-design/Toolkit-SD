@@ -96,6 +96,10 @@
 		form.querySelectorAll( '[data-module="' + key + '"], [data-mirror="' + key + '"]' ).forEach( function ( el ) {
 			el.checked = on;
 		} );
+		// Meldingen die enkel gelden als de module aan staat.
+		form.querySelectorAll( '[data-if-module="' + key + '"]' ).forEach( function ( el ) {
+			el.hidden = ! on;
+		} );
 		var card = form.querySelector( '[data-card="' + key + '"]' );
 		if ( card ) {
 			card.classList.toggle( 'is-on', on );
@@ -361,8 +365,17 @@
 			}
 			if ( 'preview' === act ) {
 				var d = r.data;
-				var html = '<div class="sde-report"><h4>Wordt overgenomen</h4><ul>';
-				( d.report.length ? d.report : [ 'Niets gevonden in ASE.' ] ).forEach( function ( x ) {
+				var html = '<div class="sde-report"><h4>Wat er met elk onderdeel gebeurt</h4><ul class="sde-tagged">';
+				( d.items || [] ).forEach( function ( x ) {
+					var ase = 'ase' === x.where;
+					html += '<li><span class="sde-tag' + ( ase ? ' sde-tag--ase' : '' ) + '">' + ( ase ? 'Gratis → blijft in ASE' : 'Pro → Toolkit SD' ) + '</span> ' + esc( x.text ) + '</li>';
+				} );
+				if ( ! d.items || ! d.items.length ) {
+					html += '<li>Niets gevonden in ASE.</li>';
+				}
+				html += '</ul>';
+				html += '<h4>Bij "ASE-functies uitzetten" (na het overnemen)</h4><ul>';
+				( d.ase_changes && d.ase_changes.length ? d.ase_changes : [ 'Er verandert niets in ASE.' ] ).forEach( function ( x ) {
 					html += '<li>' + esc( x ) + '</li>';
 				} );
 				html += '</ul>';
@@ -377,7 +390,15 @@
 				return;
 			}
 			toast( r.data.message );
-			out.innerHTML = '<div class="sde-report">' + esc( r.data.message ) + '</div>';
+			var box = '<div class="sde-report">' + esc( r.data.message );
+			if ( r.data.list && r.data.list.length ) {
+				box += '<ul>';
+				r.data.list.forEach( function ( x ) {
+					box += '<li>' + esc( x ) + '</li>';
+				} );
+				box += '</ul>';
+			}
+			out.innerHTML = box + '</div>';
 			if ( 'import' === act ) {
 				dirty = false;
 				setTimeout( function () {

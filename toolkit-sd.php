@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Toolkit SD
  * Description:       Vaste toolkit van Sonora design voor praktijkwebsites: REST-afscherming, loginpagina in Sonora-stijl, beheermenu per rol, redirect na inloggen en meer. Vervangt de Pro-functies van ASE.
- * Version:           1.6.1
+ * Version:           1.7.0
  * Author:            Sonora design
  * Author URI:        https://sonoradesign.be
  * Requires at least: 6.4
@@ -15,7 +15,7 @@ namespace SDE;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION = '1.6.1';
+const VERSION = '1.7.0';
 const OPTION  = 'sde_settings';
 define( 'SDE_FILE', __FILE__ );
 define( 'SDE_DIR', plugin_dir_path( __FILE__ ) );
