@@ -1,5 +1,15 @@
 # Toolkit SD – changelog
 
+## 1.8.0 – 2026-11-27
+
+- Nieuwe module **Publieke preview van concepten** (staat standaard uit). Deel een concept, een bericht in afwachting of een ingepland bericht via een geheime link. Wie de link heeft, ziet het zonder in te loggen.
+- In de editor staat het paneel "Publieke preview" (blokeditor en klassieke editor). Op de previewpagina, ook van Elementor, staat de knop "Publieke preview kopiëren" in de admin bar.
+- De link wordt één keer getoond, met een kopieerknop. Op de site zelf wordt enkel een controlewaarde bewaard, niet de link. Ben je hem kwijt, dan maak je een nieuwe; de oude werkt dan niet meer. Met "Uitzetten" stopt het delen meteen.
+- De link vervalt vanzelf na 7 dagen (instelbaar van 1 tot 30), en meteen bij publiceren, prullenbak of verwijderen. Een verkeerde of verlopen link geeft een gewone "pagina niet gevonden".
+- Privacy: de previewpagina wordt niet geïndexeerd, niet in de cache bewaard en geeft de link niet door aan andere sites. Er wordt niets over bezoekers bewaard. Feeds, sitemaps en de REST API tonen het concept nooit.
+- Instellingen onder Extra: berichttypes, geldigheid en de rollen die een link mogen maken. Administrators mogen het altijd.
+- Overstap ASE: "Public Preview for Drafts" wordt overgenomen en daarna in ASE uitgezet. Bestaande links uit ASE gaan niet mee: maak na de overstap nieuwe links.
+
 ## 1.7.0 – 2026-11-26
 
 - Nieuwe regel: **gratis ASE eerst**. Wat ASE gratis kan, blijft in ASE. Toolkit SD vult enkel aan wat Pro is, en geen functie wordt nog door beide plugins tegelijk uitgevoerd.

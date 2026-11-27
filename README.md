@@ -21,6 +21,7 @@ Alle modules staan standaard uit. Een nieuwe installatie verandert niets tot ze 
 | Mediacategorieën | Zelfde categorieën als ASE Pro, met filter in het mediavenster. |
 | E-mailadressen verbergen | Shortcode `[obfuscate]` met klikbare link, onderwerp en eigen tekst, en optioneel alle adressen in de inhoud. De gewone shortcode zonder die opties kan met ASE gratis. |
 | Beheermeldingen verbergen | Enkel gekozen rollen zien ze nog. |
+| Publieke preview van concepten | Een concept delen via een geheime link die vanzelf vervalt (standaard na 7 dagen, en bij publiceren). Enkel een controlewaarde van de sleutel wordt bewaard; de previewpagina krijgt noindex, geen referrer en geen cache. Links uit ASE gaan niet mee. |
 
 ## Overstap van ASE Pro
 

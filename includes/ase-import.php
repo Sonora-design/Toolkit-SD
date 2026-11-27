@@ -514,10 +514,15 @@ function build_from_ase() {
 		$items[]                      = item( 'toolkit', 'Beheermeldingen verbergen voor niet-admins' );
 	}
 
+	// Publieke preview van concepten. Bestaande links uit ASE gaan niet mee.
+	if ( on( $o, 'public_preview_for_drafts' ) ) {
+		$s['modules']['public_preview'] = true;
+		$items[]                        = item( 'toolkit', 'Publieke preview van concepten' );
+	}
+
 	// Pro-functies die deze plugin (nog) niet vervangt.
 	$not = array();
 	$map = array(
-		'public_preview_for_drafts' => 'Publieke preview van concepten',
 		'smtp_email_log'            => 'E-maillog (SMTP)',
 		'captcha_protection'        => 'CAPTCHA (Altcha/reCAPTCHA/Turnstile)',
 		'custom_content_types'      => 'Eigen berichttypes',
@@ -653,6 +658,7 @@ function plan_switch( array $s, array $o, array $e ) {
 	$off = array(
 		'login'            => array( 'login_page_customizer' => 'Login Page Customizer' ),
 		'media_categories' => array( 'enable_media_categories' => 'Media Categories' ),
+		'public_preview'   => array( 'public_preview_for_drafts' => 'Public Preview for Drafts' ),
 		'email_obfuscate'  => array(
 			'obfuscate_email_address_in_content'   => 'e-mailadressen automatisch verbergen in de inhoud',
 			'obfuscate_email_address_visitor_only' => 'e-mailadressen enkel verbergen voor bezoekers',

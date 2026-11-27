@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Toolkit SD
  * Description:       Vaste toolkit van Sonora design voor praktijkwebsites: REST-afscherming, loginpagina in Sonora-stijl, beheermenu per rol, redirect na inloggen en meer. Vervangt de Pro-functies van ASE.
- * Version:           1.7.0
+ * Version:           1.8.0
  * Author:            Sonora design
  * Author URI:        https://sonoradesign.be
  * Requires at least: 6.4
@@ -15,7 +15,7 @@ namespace SDE;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION = '1.7.0';
+const VERSION = '1.8.0';
 const OPTION  = 'sde_settings';
 define( 'SDE_FILE', __FILE__ );
 define( 'SDE_DIR', plugin_dir_path( __FILE__ ) );
@@ -37,6 +37,7 @@ function defaults() {
 			'email_obfuscate'  => false,
 			'hide_notices'     => false,
 			'editor_menu'      => false,
+			'public_preview'   => false,
 		),
 
 		// REST API.
@@ -105,6 +106,11 @@ function defaults() {
 
 		// Beheermeldingen: rollen die ze wél blijven zien.
 		'notices_roles'       => "administrator",
+
+		// Publieke preview van concepten.
+		'preview_post_types'  => "page\npost",            // Berichttypes, één per regel.
+		'preview_days'        => 7,                       // Geldigheid van een link in dagen (1 tot 30).
+		'preview_roles'       => "administrator\neditor", // Rollen die een link mogen maken.
 	);
 }
 
@@ -226,6 +232,7 @@ $sde_modules = array(
 	'email_obfuscate'  => 'modules/email-obfuscate.php',
 	'hide_notices'     => 'modules/hide-notices.php',
 	'editor_menu'      => 'modules/editor-menu.php',
+	'public_preview'   => 'modules/public-preview.php',
 );
 foreach ( $sde_modules as $sde_key => $sde_file ) {
 	if ( module_on( $sde_key ) ) {
@@ -233,6 +240,24 @@ foreach ( $sde_modules as $sde_key => $sde_file ) {
 	}
 }
 unset( $sde_modules, $sde_key, $sde_file );
+
+// Publieke preview: de dagelijkse opruiming uitschrijven als de module uit gaat of de plugin gedeactiveerd wordt.
+if ( ! module_on( 'public_preview' ) ) {
+	add_action(
+		'admin_init',
+		function () {
+			if ( wp_next_scheduled( 'sde_preview_cleanup' ) ) {
+				wp_clear_scheduled_hook( 'sde_preview_cleanup' );
+			}
+		}
+	);
+}
+register_deactivation_hook(
+	__FILE__,
+	function () {
+		wp_clear_scheduled_hook( 'sde_preview_cleanup' );
+	}
+);
 
 // Updates via sonoradesign.be, overname uit ASE en de beheerpagina.
 require_once SDE_DIR . 'includes/updater.php';

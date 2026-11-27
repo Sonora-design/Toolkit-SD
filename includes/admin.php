@@ -27,6 +27,7 @@ function modules_info() {
 		'media_categories' => array( 'Mediacategorieën', 'Bestanden ordenen in categorieën, zelfde indeling als ASE Pro.', 'extra' ),
 		'email_obfuscate'  => array( 'E-mailadressen verbergen voor spambots', 'Shortcode [obfuscate] met klikbare link, en optioneel alle adressen in de inhoud.', 'extra' ),
 		'hide_notices'     => array( 'Beheermeldingen verbergen', 'Klanten zien geen update- of reclameberichten van plugins.', 'extra' ),
+		'public_preview'   => array( 'Publieke preview van concepten', 'Deel een concept via een geheime link, zonder dat de ontvanger moet inloggen. Links uit ASE worden niet overgenomen: maak na de overstap nieuwe links.', 'extra' ),
 	);
 }
 
@@ -46,6 +47,19 @@ function roles() {
 	$out = array();
 	foreach ( wp_roles()->get_names() as $key => $name ) {
 		$out[ $key ] = translate_user_role( $name );
+	}
+	return $out;
+}
+
+/**
+ * Berichttypes waarvoor een publieke preview kan: alles met een eigen pagina op de site.
+ */
+function preview_types() {
+	$out = array();
+	foreach ( get_post_types( array( 'public' => true ), 'objects' ) as $key => $type ) {
+		if ( 'attachment' !== $key ) {
+			$out[ $key ] = $type->labels->name;
+		}
 	}
 	return $out;
 }
@@ -455,6 +469,12 @@ function sanitize( array $in ) {
 	if ( '' === $out['notices_roles'] ) {
 		$out['notices_roles'] = 'administrator';
 	}
+
+	// Publieke preview. Zonder berichttype geldt de standaard; zonder rol enkel administrators.
+	$types = array_values( array_intersect( array_map( 'sanitize_key', (array) ( $in['preview_post_types'] ?? array() ) ), array_keys( preview_types() ) ) );
+	$out['preview_post_types'] = $types ? implode( "\n", $types ) : $d['preview_post_types'];
+	$out['preview_days']       = int( $in, 'preview_days', $d['preview_days'], 1, 30 );
+	$out['preview_roles']      = implode( "\n", role_list( $in['preview_roles'] ?? array() ) );
 
 	return $out;
 }
@@ -1129,6 +1149,30 @@ function render() {
 				<div class="sde-blockhead"><h3>Beheermeldingen verbergen</h3><?php toggle( '', ! empty( $s['modules']['hide_notices'] ), 'Aan', '', 'data-mirror="hide_notices"' ); ?></div>
 				<p class="sde-hint">Deze rollen blijven de meldingen zien:</p>
 				<?php role_checks( name( 'notices_roles' ), \SDE\lines( $s['notices_roles'] ) ); ?>
+			</div>
+
+			<div class="sde-block">
+				<div class="sde-blockhead"><h3>Publieke preview van concepten</h3><?php toggle( '', ! empty( $s['modules']['public_preview'] ), 'Aan', '', 'data-mirror="public_preview"' ); ?></div>
+				<p class="sde-hint">Deel een concept via een geheime link. Wie de link heeft, ziet het concept zonder in te loggen. In de editor staat daarvoor het paneel "Publieke preview"; op de previewpagina (ook van Elementor) staat de knop "Publieke preview kopiëren" in de admin bar.</p>
+				<p class="sde-hint">De link vervalt vanzelf na het aantal dagen hieronder, en meteen als je publiceert of het bericht weggooit. Zoekmachines en de cache slaan de preview niet op. Links uit ASE worden niet overgenomen: maak na de overstap nieuwe links.</p>
+
+				<div class="sde-field sde-spaced">
+					<label>Berichttypes</label>
+					<div class="sde-chips">
+						<?php $picked = \SDE\lines( $s['preview_post_types'] ); ?>
+						<?php foreach ( preview_types() as $key => $label ) : ?>
+							<label class="sde-chip"><input type="checkbox" name="<?php echo esc_attr( name( 'preview_post_types' ) ); ?>[]" value="<?php echo esc_attr( $key ); ?>" <?php checked( in_array( $key, $picked, true ) ); ?>><span><?php echo esc_html( $label ); ?></span></label>
+						<?php endforeach; ?>
+					</div>
+				</div>
+				<div class="sde-row2">
+					<?php number( 'preview_days', 'Link geldig gedurende', $s['preview_days'], 'dagen', 1, 30 ); ?>
+				</div>
+				<div class="sde-field sde-spaced">
+					<label>Wie mag een link maken</label>
+					<?php role_checks( name( 'preview_roles' ), \SDE\lines( $s['preview_roles'] ), array( 'administrator' ) ); ?>
+					<p class="sde-hint">Administrators mogen het altijd. Andere rollen enkel bij berichten die ze zelf mogen bewerken.</p>
+				</div>
 			</div>
 		</section>
 
